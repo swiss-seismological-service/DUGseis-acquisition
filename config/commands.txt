@@ -1,0 +1,22 @@
+# DUG-Seis command file
+#
+# :copyright:
+#    ETH Zurich, Switzerland
+# :license:
+#    GNU Lesser General Public License, Version 3
+#    (https://www.gnu.org/copyleft/lesser.html)
+#
+
+Usage: dug-seis [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  -v, --verbose        Enables verbose mode
+  --cfg <config file>  Source config file. If not specified,
+                       the script tries ./dug-seis.yaml
+  --mode <mode>        Mode can be either 'live' (default) or
+                       'post', for post processing mode
+  --version            Show the version and exit.
+  --help               Show this message and exit.
+
+Commands:
+  acquisition          Run data acquisition

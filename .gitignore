@@ -1,0 +1,9 @@
+**.DS_Store
+.idea/*
+*.pyc
+*.egg-info*
+*__pycache__/*
+.idea
+dug-seis.log
+readInMatlab.asv
+matlab/
