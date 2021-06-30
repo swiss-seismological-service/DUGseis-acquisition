@@ -13,6 +13,7 @@ import time
 import logging
 import os
 import io
+import sys
 
 from ctypes import c_int32
 
@@ -61,7 +62,9 @@ class DataToASDF:
         if self.file_length_in_samples < self._nr_of_data_points:
             logger.error('file_length_sec cannot be shorter than one buffer transfer: {} seconds'
                          .format(self._nr_of_data_points/self.stats['sampling_rate']))
-            exit(1)
+            self.error = True
+        else:
+            self.error = False
         self._file_handle = None
         self._time_age_of_file = 0  # keeps track internally how old the file is
         self._last_used_file_name = None

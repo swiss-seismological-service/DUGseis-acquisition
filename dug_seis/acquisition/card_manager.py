@@ -59,6 +59,8 @@ def run(param):
     # start
     star_hub.start()
     data_to_asdf = DataToASDF(param)    # this has to be close to start(), it will set the starttime in the asdf file
+    if data_to_asdf.error:
+        logger.info("error...")
 
     # wait?
     # card1.wait_for_data()

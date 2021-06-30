@@ -120,8 +120,9 @@ def init_card(param, card_nr):
         # spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_ORMASK,    regs.SPC_TMASK_XIO0)
         # spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_XIO0_MODE, regs.SPC_TM_POS)
         if wait_for_trigger:
-            spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_ORMASK, regs.SPC_TMASK_EXT0)
             spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_EXT0_MODE, regs.SPC_TM_POS)
+            spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_TERM, 1);  # Enables the 50 Ohm input termination
+            spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_ORMASK, regs.SPC_TMASK_EXT0)
         else:
             spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_ORMASK, regs.SPC_TMASK_SOFTWARE)
     else:
@@ -131,7 +132,8 @@ def init_card(param, card_nr):
 
     # clock mode
     if external_clock:
-         spcm_dwSetParam_i32(h_card, regs.SPC_CLOCKMODE, regs.SPC_CM_EXTERNAL)
+        spcm_dwSetParam_i32(h_card, regs.SPC_CLOCKMODE, regs.SPC_CM_EXTERNAL)
+        spcm_dwSetParam_i32(h_card, regs.SPC_CLOCK50OHM, 1)  # Enables the 50 Ohm input termination
     else:
         spcm_dwSetParam_i32(h_card, regs.SPC_CLOCKMODE, regs.SPC_CM_INTPLL)
 
