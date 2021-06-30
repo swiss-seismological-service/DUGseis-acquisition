@@ -27,13 +27,13 @@ General:
 Acquisition:
   hardware_settings:
     # vertical_resolution       : 16 # bit
-    wait_for_trigger          : true
-    external_clock            : true
+    wait_for_trigger          : false
+    external_clock            : false
     sampling_frequency        : 200000
     input_range: [ 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000,
                    10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000,
                    10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000] # +/- mV input range
   asdf_settings:
     compression               : gzip-3
-    file_length_sec           : 10.0
+    file_length_sec           : 5.0
 

@@ -5,5 +5,8 @@
 *__pycache__/*
 .idea
 dug-seis.log
+dug-seis?*.log
+01_dummy_Grimsel
 readInMatlab.asv
 matlab/
+venv/

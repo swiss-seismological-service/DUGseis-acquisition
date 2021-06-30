@@ -56,7 +56,12 @@ class DataToASDF:
         self._input_range = param['Acquisition']['hardware_settings']['input_range']
         self._channel_count = param['General']['channel_count']
         self._nr_of_data_points = floor(self.l_notify_size.value / 16 / 2)  # nr of channels & 16 bit = 2 bytes
-        self.file_length_in_samples = self._nr_of_data_points * 5  # a length that does not split transferred blocks
+        # self.file_length_in_samples = self._nr_of_data_points * 5  # a length that does not split transferred blocks
+        self.file_length_in_samples = self.file_length_sec * self.stats['sampling_rate']
+        if self.file_length_in_samples < self._nr_of_data_points:
+            logger.error('file_length_sec cannot be shorter than one buffer transfer: {} seconds'
+                         .format(self._nr_of_data_points/self.stats['sampling_rate']))
+            exit(1)
         self._file_handle = None
         self._time_age_of_file = 0  # keeps track internally how old the file is
         self._last_used_file_name = None
@@ -182,8 +187,8 @@ class DataToASDF:
             data_points_to_file1 = int(self.file_length_in_samples - self._data_points_in_this_file)
 
         data_points_to_file2 = int(np_data_list[0].size / 16 - data_points_to_file1)
-        # logger.info("data_points_in_file1: {0}".format(data_points_to_file1))
-        # logger.info("data_points_in_file2: {0}".format(data_points_to_file2))
+        logger.info("data_points_in_file1: {0}".format(data_points_to_file1))
+        logger.info("data_points_in_file2: {0}".format(data_points_to_file2))
         if data_points_to_file1 + data_points_to_file2 != np_data_list[0].size / 16:
             logger.error("error: data_points_to_file1 + data_points_to_file2 != np_data_list[0].size / 16")
 
@@ -213,7 +218,6 @@ class DataToASDF:
         # nacher = self.stats['starttime']
         # logger.info('{} {} {}'.format(vorher, nacher, vorher-nacher, type(nacher)))
         # logger.info('{}'.format(data_points_to_file1 / self._sampling_rate))
-
 
         if data_points_to_file2 != 0:
             # logger.info("data_points_to_file2: {}".format(data_points_to_file2))
