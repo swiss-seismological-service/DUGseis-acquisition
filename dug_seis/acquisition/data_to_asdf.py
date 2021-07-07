@@ -13,7 +13,6 @@ import time
 import logging
 import os
 import io
-import sys
 
 from ctypes import c_int32
 
@@ -22,6 +21,7 @@ from obspy.core import Stream, Trace, UTCDateTime
 from obspy.core.inventory import Longitude, Latitude
 
 import pyasdf
+import numpy as np
 
 from dug_seis.acquisition.flat_response_stationxml import get_flat_response_inventory
 
@@ -47,15 +47,12 @@ class DataToASDF:
                       'channel': '001',
                       'starttime': UTCDateTime().timestamp,
                       'sampling_rate': param['Acquisition']['hardware_settings']['sampling_frequency'],
-                      'origin_ch1903_east': param['General']['origin_ch1903_east'],
-                      'origin_ch1903_north': param['General']['origin_ch1903_north'],
-                      'origin_elev': param['General']['origin_elev'],
                       'gain': '0'
                       }
 
         self._sampling_rate = param['Acquisition']['hardware_settings']['sampling_frequency']
         self._input_range = param['Acquisition']['hardware_settings']['input_range']
-        self._channel_count = param['General']['channel_count']
+        self._channel_count = len( param['Acquisition']['hardware_settings']['input_range'] )
         self._nr_of_data_points = floor(self.l_notify_size.value / 16 / 2)  # nr of channels & 16 bit = 2 bytes
         # self.file_length_in_samples = self._nr_of_data_points * 5  # a length that does not split transferred blocks
         self.file_length_in_samples = self.file_length_sec * self.stats['sampling_rate']
@@ -127,6 +124,15 @@ class DataToASDF:
         self._last_used_file_name = file_name
 
         # self._add_all_station_xml_s(self._file_handle)
+        self._add_all_auxiliary_data(self._file_handle)
+
+    def _add_all_auxiliary_data(self, ds):
+        # pyasdf.ASDFDataSet.add_auxiliary_data
+        # stuff that is not in self.stats
+        ds.add_auxiliary_data(data=np.array([True]), data_type="hardware_settings", path="various",
+                              parameters={"exampleValue": 5})
+        ds.add_auxiliary_data(data=np.array(self._input_range), data_type="hardware_settings", path="input_range",
+                              parameters={})
 
     def _add_all_station_xml_s(self, ds):
         for i in range(self._channel_count):

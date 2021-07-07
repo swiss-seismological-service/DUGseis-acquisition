@@ -73,8 +73,6 @@ def cli(ctx, cfg, verbose, mode, log):
     with open(cfg_path) as f:
         try:
             param = yaml.load(f, Loader=yaml.FullLoader)
-            if len(param['Acquisition']['hardware_settings']['input_range']) != param['General']['channel_count']:
-                logger.error('Number of channels in "input_range" does not match "channel_count"')
         except IOError:
             logger.error('could not read parameter file at {cfg_path}')
             exit(-1)
