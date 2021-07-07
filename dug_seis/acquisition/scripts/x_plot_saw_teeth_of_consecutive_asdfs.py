@@ -21,11 +21,13 @@ for index, file_name in enumerate(asdf_list):
                                      starttime=start_time,
                                      endtime=end_time,
                                      tag="raw_recording")
-    asdf_1.waveforms.XB_02.raw_recording[0].stats.sampling_rate = 200000
-
+    print(stream_1[index].stats.sampling_rate)
+    stream_1[index].stats.sampling_rate = 200000
     x = 2
 
+
+for tr in stream_1:
+    tr.stats.sampling_rate = 200000.0
+
+
 stream_1.merge(method=0)
-d = {'file_names': file_names, 'npts': npts_all, 'delta [s]': delta}
-df = pd.DataFrame(data=d)
-df.to_csv(Path(asdf_folder).parents[1].joinpath('log_start_endtimes_in_asdf.csv'), index=False)
