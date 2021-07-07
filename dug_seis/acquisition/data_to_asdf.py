@@ -75,8 +75,10 @@ class DataToASDF:
         self._data_points_in_this_file = 0
 
     def set_starttime_now(self):
-        self.stats['starttime'] = UTCDateTime().timestamp
-        logger.info("new starttime set to: {}".format(UTCDateTime(self.stats['starttime'])))
+        self.stats['starttime_ns'] = UTCDateTime().ns
+        self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
+
+        logger.info("new starttime set to: {}".format(UTCDateTime(ns=self.stats['starttime_ns'])))
 
     def _check_if_folders_exist_create_if_needed(self):
         if not os.path.isdir(self.folder):
@@ -88,8 +90,8 @@ class DataToASDF:
             logger.info("creating folder_tmp: {}".format(self.folder_tmp))
 
     def _creat_new_julian_day_folder_if_needed(self):
-        if UTCDateTime(self.stats['starttime']).julday != self._last_used_julian_day:
-            self._last_used_julian_day = UTCDateTime(self.stats['starttime']).julday
+        if UTCDateTime(ns=self.stats['starttime_ns']).julday != self._last_used_julian_day:
+            self._last_used_julian_day = UTCDateTime(ns=self.stats['starttime_ns']).julday
             self._last_used_julian_day_folder = self.folder + str(self._last_used_julian_day) + '/'
             if os.path.isdir(self._last_used_julian_day_folder):
                 logger.info("julianday folder: {} already exists, no need to create it.".format(self._last_used_julian_day_folder))
@@ -103,9 +105,9 @@ class DataToASDF:
         With parameters of the DataToAsdf class. Sets the age of the file to time.time()."""
 
         file_name = "{0}__{1}__{2}.h5".format(
-            UTCDateTime(self.stats['starttime']),
-            UTCDateTime(self.stats['starttime'] + (self.file_length_in_samples-1) / self._sampling_rate),
-            self.stats['station'])
+            UTCDateTime(ns=self.stats['starttime_ns']),
+            UTCDateTime(ns=self.stats['starttime_ns'] + int((self.file_length_in_samples-1) * (1/self._sampling_rate * 10**9))),
+            self.stats['station'].zfill(2))
         file_name = file_name.replace(":", "_")
         file_name = file_name.replace("-", "_")
         folder_file_name = "{0}{1}".format(self.folder_tmp, file_name)
@@ -160,6 +162,7 @@ class DataToASDF:
 
     def _add_samples_to_file(self, np_data_list, start_sample, end_sample):
         stream = Stream()
+        # self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])# adjust stats['starttime'], stream can only read UTCDateTime stamps and not nanoseconds in integer
 
         card_nr = 0
         for np_data in np_data_list:
@@ -207,6 +210,7 @@ class DataToASDF:
             # logger.info(stream)
             # logger.info(type(self.stats['starttime']))
             # logger.info(self.stats['starttime'])
+            logger.info("start time of stream = {0}".format(UTCDateTime(ns=self.stats['starttime_ns'])))
             self._file_handle.append_waveforms(stream, tag="raw_recording")
             del stream
 
@@ -216,7 +220,13 @@ class DataToASDF:
         # vorher = self.stats['starttime']
 
         # starttime for next segment
-        self.stats['starttime'] = self.stats['starttime'] + data_points_to_file1 / self._sampling_rate
+        # self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
+        self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(data_points_to_file1 * (1 / self._sampling_rate * 10 ** 9))
+        self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
+        # logger.info("start time old file = {0}".format(self.stats['starttime']))
+        # logger.info("data_points_in_this_file = {0}".format(self._data_points_in_this_file))
+        # logger.info("seconds in this_file = {0}".format(self._data_points_in_this_file / self._sampling_rate))
+        # logger.info("start_time_of next file = {0}".format(self.stats['starttime']))
         # self.stats['starttime'] = UTCDateTime(self.stats['starttime']) + data_points_to_file1 / self._sampling_rate
         # nacher = self.stats['starttime']
         # logger.info('{} {} {}'.format(vorher, nacher, vorher-nacher, type(nacher)))
@@ -230,8 +240,9 @@ class DataToASDF:
             self._file_handle.append_waveforms(stream, tag="raw_recording")
             del stream
             # self.stats['starttime'] = UTCDateTime(self.stats['starttime']) + self._data_points_in_this_file / self._sampling_rate
-            self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
-
+            # self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
+            self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(self._data_points_in_this_file * (1 / self._sampling_rate * 10 ** 9))
+            self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
         # else:
             # starttime for next segment
             # self.stats['starttime'] = UTCDateTime(self.stats['starttime']) + self._nr_of_data_points / self._sampling_rate
