@@ -42,7 +42,7 @@ class DataToASDF:
         self.l_notify_size = c_int32(param['Acquisition']['bytes_per_transfer'])
 
         self.stats = {'network': param['General']['stats']['network'],
-                      'station': str(param['General']['stats']['daq_unit']),
+                      'station': str(param['General']['stats']['daq_unit']).zfill(2),
                       'location': '00',
                       'channel': '001',
                       'starttime': UTCDateTime().timestamp,
@@ -126,7 +126,7 @@ class DataToASDF:
             os.rename(self.folder_tmp + self._last_used_file_name, self._last_used_julian_day_folder + self._last_used_file_name)
         self._last_used_file_name = file_name
 
-        self._add_all_station_xml_s(self._file_handle)
+        # self._add_all_station_xml_s(self._file_handle)
 
     def _add_all_station_xml_s(self, ds):
         for i in range(self._channel_count):
@@ -168,7 +168,7 @@ class DataToASDF:
         for np_data in np_data_list:
 
             for i in range(16):
-                self.stats['location'] = self._get_station_name(i + 16 * card_nr)
+                self.stats['location'] = self._get_station_name((i + 16 * card_nr)+1)
                 stream += Trace(np_data[i, start_sample:end_sample], header=self.stats)
                 # logger.info("{}, {}\n".format(self.stats['station'], self.stats['starttime']))
 
