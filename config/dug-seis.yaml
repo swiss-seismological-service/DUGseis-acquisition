@@ -22,8 +22,8 @@ General:
 Acquisition:
   hardware_settings:
     # vertical_resolution       : 16 # bit
-    wait_for_trigger          : false
-    external_clock            : false
+    wait_for_trigger          : true
+    external_clock            : true
     sampling_frequency        : 200000
     input_range: [ 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000,
                    10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000,

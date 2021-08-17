@@ -121,7 +121,7 @@ def init_card(param, card_nr):
         # spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_XIO0_MODE, regs.SPC_TM_POS)
         if wait_for_trigger:
             spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_EXT0_MODE, regs.SPC_TM_POS)
-            spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_TERM, 1);  # Enables the 50 Ohm input termination
+            spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_TERM, 1)  # Enables the 50 Ohm input termination
             spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_ORMASK, regs.SPC_TMASK_EXT0)
         else:
             spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_ORMASK, regs.SPC_TMASK_SOFTWARE)
