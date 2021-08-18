@@ -72,10 +72,12 @@ class DataToASDF:
         self._data_points_in_this_file = 0
 
     def set_starttime_now(self):
-        self.stats['starttime_ns'] = UTCDateTime().ns
+        starttime_now = UTCDateTime().ns
+        self.stats['starttime_ns'] = round(starttime_now, -9)
         self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
 
         logger.info("new starttime set to: {}".format(UTCDateTime(ns=self.stats['starttime_ns'])))
+        logger.info("new starttime, software: {}".format(UTCDateTime(ns=starttime_now)))
 
     def _check_if_folders_exist_create_if_needed(self):
         if not os.path.isdir(self.folder):
