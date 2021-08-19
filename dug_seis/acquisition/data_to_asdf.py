@@ -42,11 +42,11 @@ class DataToASDF:
         self.l_notify_size = c_int32(param['Acquisition']['bytes_per_transfer'])
 
         self.stats = {'network': param['General']['stats']['network'],
-                      'station': str(param['General']['stats']['daq_unit']).zfill(2),
+                      'station': param['General']['stats']['daq_unit'],
                       'location': '00',
                       'channel': '001',
                       'starttime': UTCDateTime().timestamp,
-                      'sampling_rate': param['Acquisition']['hardware_settings']['sampling_frequency'],
+                      'delta': 1/param['Acquisition']['hardware_settings']['sampling_frequency'],
                       'gain': '0'
                       }
 
@@ -55,7 +55,7 @@ class DataToASDF:
         self._channel_count = len( param['Acquisition']['hardware_settings']['input_range'] )
         self._nr_of_data_points = floor(self.l_notify_size.value / 16 / 2)  # nr of channels & 16 bit = 2 bytes
         # self.file_length_in_samples = self._nr_of_data_points * 5  # a length that does not split transferred blocks
-        self.file_length_in_samples = self.file_length_sec * self.stats['sampling_rate']
+        self.file_length_in_samples = self.file_length_sec * 1/self.stats['delta']
         if self.file_length_in_samples < self._nr_of_data_points:
             logger.error('file_length_sec cannot be shorter than one buffer transfer: {} seconds'
                          .format(self._nr_of_data_points/self.stats['sampling_rate']))
