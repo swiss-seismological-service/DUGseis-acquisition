@@ -17,7 +17,6 @@ General:
 
   stats:
     network                   : XB # trace naming
-    daq_unit                  : 02 # 02 for continuous-2, 03 for continuous-3, 04 for continuous-4
 
 Acquisition:
   hardware_settings:
