@@ -40,7 +40,7 @@ def acquisition_(param):
         param['General']['stats']['daq_unit'] = '01'.zfill(2)
     elif hostname == 'continuous-02-bedretto':
         param['General']['stats']['daq_unit'] = '02'.zfill(2)
-    elif hostname == 'continuous03bedretto':
+    elif hostname == 'continuous-03-bedretto':
         param['General']['stats']['daq_unit'] = '03'.zfill(2)
     elif hostname == 'continuous-04-bedretto':
         param['General']['stats']['daq_unit'] = '04'.zfill(2)
