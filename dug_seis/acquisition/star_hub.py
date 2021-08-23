@@ -76,8 +76,13 @@ class StarHub:
 
     def start(self):
         """Start all cards using the star-hub handle."""
+        # regs.M2CMD_EXTRA_STARTDMA, regs.M2CMD_EXTRA_POLL
+
+        # dw_error = spcm_dwSetParam_i32(self.h_sync, regs.SPC_M2CMD, regs.SPC_TS_RESET)
         dw_error = spcm_dwSetParam_i32(self.h_sync, regs.SPC_M2CMD,
-                                       regs.M2CMD_CARD_START | regs.M2CMD_CARD_ENABLETRIGGER | regs.M2CMD_DATA_STARTDMA)
+                                       regs.M2CMD_CARD_START | regs.M2CMD_CARD_ENABLETRIGGER | regs.M2CMD_DATA_STARTDMA |
+                                       regs.M2CMD_EXTRA_POLL)
+
         if dw_error != 0:  # != ERR_OK
             sz_error_text_buffer = create_string_buffer(regs.ERRORTEXTLEN)
             spcm_dwGetErrorInfo_i32(self.h_sync, None, None, sz_error_text_buffer)

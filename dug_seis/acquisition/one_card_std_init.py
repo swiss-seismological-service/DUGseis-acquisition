@@ -24,7 +24,7 @@ import dug_seis.acquisition.hardware_driver.regs as regs
 from dug_seis.acquisition.hardware_driver.pyspcm import spcm_hOpen, spcm_dwGetParam_i32
 from dug_seis.acquisition.hardware_driver.pyspcm import spcm_dwSetParam_i32, spcm_dwGetContBuf_i64
 from dug_seis.acquisition.hardware_driver.pyspcm import spcm_dwDefTransfer_i64
-from dug_seis.acquisition.hardware_driver.pyspcm import SPCM_BUF_DATA, SPCM_DIR_CARDTOPC
+from dug_seis.acquisition.hardware_driver.pyspcm import SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, SPCM_BUF_TIMESTAMP
 
 from ctypes import c_int32, c_uint64
 from ctypes import create_string_buffer, byref, c_void_p
@@ -107,6 +107,10 @@ def init_card(param, card_nr):
     # timeout im ms (e.g. 8 sec)
     spcm_dwSetParam_i32(h_card, regs.SPC_TIMEOUT,        timeout)
 
+    trig_count = c_int32()
+    spcm_dwGetParam_i32(h_card, regs.SPC_TRIGGERCOUNTER, byref(trig_count))
+    logger.info("trigger counter start: {}".format(trig_count.value))
+
     # xio setup
     if card_nr == 1:
         spcm_dwSetParam_i32(h_card, regs.SPC_XIO_DIRECTION, regs.XD_CH0_INPUT | regs.XD_CH2_INPUT)
@@ -118,11 +122,11 @@ def init_card(param, card_nr):
     # trigger set to XIO0 of card with star hub
     if card_nr == 1:
         # spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_ORMASK,    regs.SPC_TMASK_XIO0)
-        # spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_XIO0_MODE, regs.SPC_TM_POS)
+        spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_XIO0_MODE, regs.SPC_TM_NEG)
         if wait_for_trigger:
             spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_EXT0_MODE, regs.SPC_TM_POS)
             spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_TERM, 1)  # Enables the 50 Ohm input termination
-            spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_ORMASK, regs.SPC_TMASK_EXT0)
+            spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_ORMASK, regs.SPC_TMASK_EXT0 | regs.SPC_TMASK_XIO0)
         else:
             spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_ORMASK, regs.SPC_TMASK_SOFTWARE)
     else:
@@ -143,9 +147,8 @@ def init_card(param, card_nr):
 
     # spcm_dwSetParam_i32(h_card, regs.SPC_CLOCKMODE, regs.SPC_CM_EXTERNAL)
 
-#    spcm_dwSetParam_i32(h_card, regs.SPC_CLOCKMODE, regs.SPC_CM_EXTERNAL)
+    # spcm_dwSetParam_i32(h_card, regs.SPC_CLOCKMODE, regs.SPC_CM_EXTERNAL)
     # spcm_dwSetParam_i32(h_card, regs.SPC_EXTERNALCLOCK, 1)
-
 
     # set sample rate
     spcm_dwSetParam_i32(h_card, regs.SPC_SAMPLERATE, sampling_frequency)
@@ -153,6 +156,29 @@ def init_card(param, card_nr):
 
     # no clock output
     spcm_dwSetParam_i32(h_card, regs.SPC_CLOCKOUT, 0)
+
+    # setting timestamp mode to start reset mode using internal clocking
+    # SPC_TSCNT_INTERNAL, SPC_TSCNT_REFCLOCKPOS
+    #
+    spcm_dwSetParam_i32(h_card, regs.SPC_TIMESTAMP_CMD,
+                        regs.SPC_TSMODE_STARTRESET | regs.SPC_TSCNT_INTERNAL | regs.SPC_TSFEAT_NONE)
+
+    # we try to use continuous memory if available and big enough
+    pv_buffer_rc = c_void_p()
+    qw_cont_buf_len_rc = c_uint64(0)
+    qw_buffer_size_rc = c_uint64(10)
+    spcm_dwGetContBuf_i64(h_card, SPCM_BUF_TIMESTAMP, byref(pv_buffer_rc),
+                          byref(qw_cont_buf_len_rc))
+    logger.info("ContBuf length for timestamps: {0:d}".format(qw_cont_buf_len_rc.value))
+
+    if qw_cont_buf_len_rc.value >= 4096:
+        logger.info("Using continuous buffer for timestamps")
+    else:
+        pv_buffer_rc = create_string_buffer(qw_buffer_size_rc.value)
+        logger.info("Using buffer allocated by user program for timestamps")
+
+    spcm_dwDefTransfer_i64(h_card, SPCM_BUF_TIMESTAMP, SPCM_DIR_CARDTOPC, 4096, pv_buffer_rc, c_uint64(0),
+                           qw_buffer_size_rc)
 
     # read available ranges
     range_min = c_int32(0)
@@ -180,7 +206,7 @@ def init_card(param, card_nr):
     qw_cont_buf_len = c_uint64(0)
     spcm_dwGetContBuf_i64(h_card, SPCM_BUF_DATA, byref(pv_buffer),
                           byref(qw_cont_buf_len))
-    logger.debug("ContBuf length: {0:d}".format(qw_cont_buf_len.value))
+    logger.info("ContBuf length: {0:d}".format(qw_cont_buf_len.value))
 
     if qw_cont_buf_len.value >= qw_buffer_size.value:
         logger.info("Using continuous buffer")
@@ -191,4 +217,4 @@ def init_card(param, card_nr):
     spcm_dwDefTransfer_i64(h_card, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, l_notify_size.value, pv_buffer, c_uint64(0),
                            qw_buffer_size)
 
-    return h_card, pv_buffer
+    return h_card, pv_buffer, pv_buffer_rc

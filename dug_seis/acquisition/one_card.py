@@ -35,6 +35,7 @@ else:
 
 logger = logging.getLogger('dug-seis')
 
+
 class Card:
 
     def __init__(self, param, card_nr):
@@ -47,6 +48,7 @@ class Card:
         self.debug_buffer_behaviour = False
 
         self._pv_buffer = None
+        self.pv_buffer_rc_ = None
         # nr of channels & 16 bit = 2 bytes
         self._nr_of_datapoints = floor(param['Acquisition']['bytes_per_transfer'] / 16 / 2)
 
@@ -61,7 +63,7 @@ class Card:
         """Initialise card. Setup card parameters. Reserve buffers for DMA data transfer."""
         logger.info("init card: {}".format(self.card_nr))
         if self.card_nr == 0 or self.card_nr == 1:
-            self.h_card, self._pv_buffer = sdt_init_card(param, self.card_nr)
+            self.h_card, self._pv_buffer, self._pv_buffer_rc = sdt_init_card(param, self.card_nr)
         else:
             logger.error("card_nr needs to be 0 or 1, received:{}".format(self.card_nr))
 
@@ -116,6 +118,23 @@ class Card:
         # cast to pointer to 16bit integer
         x = cast(addressof(self._pv_buffer) + self.read_buffer_position(), POINTER(c_int16))
         np_data = np.ctypeslib.as_array(x, shape=(self._nr_of_datapoints, 16)).T
+
+        l_pc_pos = c_int32()
+        l_avail_user = c_int32()
+        spcm_dwGetParam_i32(self.h_card, regs.SPC_TS_AVAIL_USER_LEN, byref(l_avail_user))
+        spcm_dwGetParam_i32(self.h_card, regs.SPC_TS_AVAIL_USER_POS, byref(l_pc_pos))
+
+        logger.info("We now have {} new bytes available.".format(l_avail_user.value))
+        logger.info("The available data starts at position {}.".format(l_pc_pos.value))
+
+        x = cast(addressof(self._pv_buffer_rc) + 0, POINTER(c_int32))
+        np_data2 = np.ctypeslib.as_array(x, shape=(2, 1)).T
+        logger.info("{}".format(np_data2))
+
+        trig_count = c_int32()
+        spcm_dwGetParam_i32(self.h_card, regs.SPC_TRIGGERCOUNTER, byref(trig_count))
+        logger.info("trigger counter: {}".format(trig_count.value))
+
         return np_data
 
     def data_has_been_read(self):
