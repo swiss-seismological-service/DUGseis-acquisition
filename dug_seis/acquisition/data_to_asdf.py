@@ -58,7 +58,7 @@ class DataToASDF:
         self.file_length_in_samples = self.file_length_sec * 1/self.stats['delta']
         if self.file_length_in_samples < self._nr_of_data_points:
             logger.error('file_length_sec cannot be shorter than one buffer transfer: {} seconds'
-                         .format(self._nr_of_data_points/self.stats['sampling_rate']))
+                         .format(self._nr_of_data_points/self._sampling_rate))
             self.error = True
         else:
             self.error = False

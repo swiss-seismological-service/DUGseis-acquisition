@@ -28,7 +28,8 @@ _install_requires = [
     "obspy",
     "click",
     "pyyaml",
-    "pyasdf"
+    "pyasdf",
+    "matplotlib"
     ]
 
 setup(

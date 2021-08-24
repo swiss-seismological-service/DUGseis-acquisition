@@ -5,7 +5,7 @@ from obspy.core import Stream
 import plot_waveform_v03_only_wave as plot
 
 # Path of asdf files
-asdf_folder = Path('/data/testData/sawTooth/')
+asdf_folder = Path('/data/testData/secondPulsesOnCh32/')
 asdf_list = list(sorted(asdf_folder.glob('*.h5')))
 fast_mode = False
 

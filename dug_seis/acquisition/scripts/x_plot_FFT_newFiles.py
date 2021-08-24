@@ -4,8 +4,17 @@ from obspy.core import Stream
 
 import plot_waveform_v03_only_wave as plot
 
+import numpy as np
+import scipy.fftpack
+
+import matplotlib.pyplot as plt
+plt.style.use('classic')
+
 # Path of asdf files
-asdf_folder = Path('/data/testData/sawTooth/')
+asdf_folder = Path('/data/raw_waveforms/236/')
+asdf_folder = Path('/data/testData/secondPulsesOnCh32')
+#asdf_folder = Path('/data/testData/sine20kHzConti04/')
+#asdf_folder = Path('/data/testData/noiseConti04/')
 asdf_list = list(sorted(asdf_folder.glob('*.h5')))
 fast_mode = False
 
@@ -24,11 +33,6 @@ for index, file_name in enumerate(asdf_list):
         stream_1 += asdf_1.get_waveforms(network='XB', station='04',
                                          location=str(chan).zfill(2), channel="001",
                                          starttime=start_time,
-                                         endtime=start_time+0.001,  # start_time+1,  # end_time,
-                                         tag="raw_recording")
-        stream_1 += asdf_1.get_waveforms(network='XB', station='04',
-                                         location=str(chan).zfill(2), channel="001",
-                                         starttime=end_time-0.001,
                                          endtime=end_time,  # start_time+1,  # end_time,
                                          tag="raw_recording")
 
@@ -44,4 +48,22 @@ for index, file_name in enumerate(asdf_list):
 print("merging")
 stream_1.merge(method=0)
 
-plot.plot_waveform(stream_1)
+# Number of sample points
+N = 120000
+print("length of stream_1: " + str(len(stream_1.traces[0].data)))
+sig = stream_1.traces[0].data[0:N]
+print("length of sig: " + str(len(sig)))
+
+plt.plot(sig)
+
+# sample spacing
+T = 5e-6
+x = np.linspace(0.0, N*T, N)
+yf = scipy.fftpack.fft(sig)
+xf = np.linspace(0.0, 1.0/(2.0*T), int(N/2))
+
+fig, ax = plt.subplots()
+ax.plot(xf, 2.0/N * np.abs(yf[:N//2]), marker='o')
+plt.show()
+
+# plot.plot_waveform(stream_1)
