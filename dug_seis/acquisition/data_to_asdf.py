@@ -110,7 +110,7 @@ class DataToASDF:
             self.stats['station'].zfill(2))
         file_name = file_name.replace(":", "_")
         file_name = file_name.replace("-", "_")
-        folder_file_name = "{0}".format(self.folder_tmp, file_name)
+        folder_file_name = "{0}{1}".format(self.folder_tmp, file_name)
         logger.info("samples in file = {0}".format(self.file_length_in_samples))
         logger.info("_create_new_file with folder_file_name = {0}".format(folder_file_name))
 
