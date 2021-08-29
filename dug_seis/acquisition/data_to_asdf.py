@@ -73,7 +73,8 @@ class DataToASDF:
 
     def set_starttime_now(self):
         starttime_now = UTCDateTime().ns
-        self.stats['starttime_ns'] = round(starttime_now, -9)
+        self.stats['starttime_ns'] = round(starttime_now, -9) - (4 * self.stats['delta'] * 10**9) # balance 4 samples
+        # pre-trigger from start time in seconds
         self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
 
         logger.info("new starttime set to: {}".format(UTCDateTime(ns=self.stats['starttime_ns'])))
