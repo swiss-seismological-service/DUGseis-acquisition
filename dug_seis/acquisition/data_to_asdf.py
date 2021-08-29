@@ -230,7 +230,7 @@ class DataToASDF:
 
         # starttime for next segment
         # self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
-        self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(data_points_to_file1 * (1 / self._sampling_rate * 10 ** 9))
+        self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(data_points_to_file1 * (self.stats['delta'] * 10 ** 9))
         self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
         # logger.info("start time old file = {0}".format(self.stats['starttime']))
         # logger.info("data_points_in_this_file = {0}".format(self._data_points_in_this_file))
@@ -250,7 +250,7 @@ class DataToASDF:
             del stream
             # self.stats['starttime'] = UTCDateTime(self.stats['starttime']) + self._data_points_in_this_file / self._sampling_rate
             # self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
-            self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(self._data_points_in_this_file * (1 / self._sampling_rate * 10 ** 9))
+            self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(self._data_points_in_this_file * (self.stats['delta'] * 10 ** 9))
             self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
         # else:
             # starttime for next segment
