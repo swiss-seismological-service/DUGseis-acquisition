@@ -106,12 +106,14 @@ class DataToASDF:
 
         file_name = "{0}__{1}__{2}.h5".format(
             UTCDateTime(ns=self.stats['starttime_ns']),
-            UTCDateTime(ns=self.stats['starttime_ns'] + int((self.file_length_in_samples-1) * (1/self._sampling_rate * 10**9))),
+            UTCDateTime(ns=self.stats['starttime_ns'] + int((self.file_length_in_samples-1) * (self.stats['delta'] * 10**9))),
             self.stats['station'].zfill(2))
         file_name = file_name.replace(":", "_")
         file_name = file_name.replace("-", "_")
-        folder_file_name = "{0}{1}".format(self.folder_tmp, file_name)
+        folder_file_name = "{0}".format(self.folder_tmp, file_name)
+        logger.info("samples in file = {0}".format(self.file_length_in_samples))
         logger.info("_create_new_file with folder_file_name = {0}".format(folder_file_name))
+
 
         self._time_age_of_file = time.time()
         # logger.info("self.compression = {}, type = {}".format(self.compression, type(self.compression)))
@@ -232,7 +234,7 @@ class DataToASDF:
         # self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
         self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(data_points_to_file1 * (self.stats['delta'] * 10 ** 9))
         self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
-        # logger.info("start time old file = {0}".format(self.stats['starttime']))
+        logger.info("time delta between files in ns = {0}".format(int(data_points_to_file1 * (self.stats['delta'] * 10 ** 9))))
         # logger.info("data_points_in_this_file = {0}".format(self._data_points_in_this_file))
         # logger.info("seconds in this_file = {0}".format(self._data_points_in_this_file / self._sampling_rate))
         # logger.info("start_time_of next file = {0}".format(self.stats['starttime']))
@@ -252,6 +254,8 @@ class DataToASDF:
             # self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
             self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(self._data_points_in_this_file * (self.stats['delta'] * 10 ** 9))
             self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
+            logger.info("time delta between files in ns = {0}".format(
+                int(self._data_points_in_this_file * (self.stats['delta'] * 10 ** 9))))
         # else:
             # starttime for next segment
             # self.stats['starttime'] = UTCDateTime(self.stats['starttime']) + self._nr_of_data_points / self._sampling_rate
