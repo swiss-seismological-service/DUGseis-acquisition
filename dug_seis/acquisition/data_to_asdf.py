@@ -42,11 +42,11 @@ class DataToASDF:
         self.l_notify_size = c_int32(param['Acquisition']['bytes_per_transfer'])
 
         self.stats = {'network': param['General']['stats']['network'],
-                      'station': str(param['General']['stats']['daq_unit']).zfill(2),
+                      'station': param['General']['stats']['daq_unit'],
                       'location': '00',
                       'channel': '001',
                       'starttime': UTCDateTime().timestamp,
-                      'sampling_rate': param['Acquisition']['hardware_settings']['sampling_frequency'],
+                      'delta': 1/param['Acquisition']['hardware_settings']['sampling_frequency'],
                       'gain': '0'
                       }
 
@@ -55,10 +55,10 @@ class DataToASDF:
         self._channel_count = len( param['Acquisition']['hardware_settings']['input_range'] )
         self._nr_of_data_points = floor(self.l_notify_size.value / 16 / 2)  # nr of channels & 16 bit = 2 bytes
         # self.file_length_in_samples = self._nr_of_data_points * 5  # a length that does not split transferred blocks
-        self.file_length_in_samples = self.file_length_sec * self.stats['sampling_rate']
+        self.file_length_in_samples = int(self.file_length_sec * self._sampling_rate)
         if self.file_length_in_samples < self._nr_of_data_points:
             logger.error('file_length_sec cannot be shorter than one buffer transfer: {} seconds'
-                         .format(self._nr_of_data_points/self.stats['sampling_rate']))
+                         .format(self._nr_of_data_points/self._sampling_rate))
             self.error = True
         else:
             self.error = False
@@ -72,10 +72,13 @@ class DataToASDF:
         self._data_points_in_this_file = 0
 
     def set_starttime_now(self):
-        self.stats['starttime_ns'] = UTCDateTime().ns
+        starttime_now = UTCDateTime().ns
+        self.stats['starttime_ns'] = round(starttime_now, -9) - int((4 * self.stats['delta'] * 10**9))  # balance 4
+        # samples pre-trigger from start time in seconds
         self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
 
         logger.info("new starttime set to: {}".format(UTCDateTime(ns=self.stats['starttime_ns'])))
+        logger.info("new starttime, software: {}".format(UTCDateTime(ns=starttime_now)))
 
     def _check_if_folders_exist_create_if_needed(self):
         if not os.path.isdir(self.folder):
@@ -103,12 +106,14 @@ class DataToASDF:
 
         file_name = "{0}__{1}__{2}.h5".format(
             UTCDateTime(ns=self.stats['starttime_ns']),
-            UTCDateTime(ns=self.stats['starttime_ns'] + int((self.file_length_in_samples-1) * (1/self._sampling_rate * 10**9))),
+            UTCDateTime(ns=self.stats['starttime_ns'] + int((self.file_length_in_samples-1) * (self.stats['delta'] * 10**9))),
             self.stats['station'].zfill(2))
         file_name = file_name.replace(":", "_")
         file_name = file_name.replace("-", "_")
         folder_file_name = "{0}{1}".format(self.folder_tmp, file_name)
+        logger.info("samples in file = {0}".format(self.file_length_in_samples))
         logger.info("_create_new_file with folder_file_name = {0}".format(folder_file_name))
+
 
         self._time_age_of_file = time.time()
         # logger.info("self.compression = {}, type = {}".format(self.compression, type(self.compression)))
@@ -227,9 +232,9 @@ class DataToASDF:
 
         # starttime for next segment
         # self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
-        self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(data_points_to_file1 * (1 / self._sampling_rate * 10 ** 9))
+        self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(data_points_to_file1 * (self.stats['delta'] * 10 ** 9))
         self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
-        # logger.info("start time old file = {0}".format(self.stats['starttime']))
+        logger.info("time delta between files in ns = {0}".format(int(data_points_to_file1 * (self.stats['delta'] * 10 ** 9))))
         # logger.info("data_points_in_this_file = {0}".format(self._data_points_in_this_file))
         # logger.info("seconds in this_file = {0}".format(self._data_points_in_this_file / self._sampling_rate))
         # logger.info("start_time_of next file = {0}".format(self.stats['starttime']))
@@ -247,8 +252,10 @@ class DataToASDF:
             del stream
             # self.stats['starttime'] = UTCDateTime(self.stats['starttime']) + self._data_points_in_this_file / self._sampling_rate
             # self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
-            self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(self._data_points_in_this_file * (1 / self._sampling_rate * 10 ** 9))
+            self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(self._data_points_in_this_file * (self.stats['delta'] * 10 ** 9))
             self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
+            logger.info("time delta between files in ns = {0}".format(
+                int(self._data_points_in_this_file * (self.stats['delta'] * 10 ** 9))))
         # else:
             # starttime for next segment
             # self.stats['starttime'] = UTCDateTime(self.stats['starttime']) + self._nr_of_data_points / self._sampling_rate

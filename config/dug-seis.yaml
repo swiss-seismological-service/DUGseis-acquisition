@@ -30,5 +30,5 @@ Acquisition:
                    10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000] # +/- mV input range
   asdf_settings:
     compression               : gzip-3
-    file_length_sec           : 30.0
+    file_length_sec           : 6.0
 

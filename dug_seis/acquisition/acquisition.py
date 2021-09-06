@@ -12,6 +12,7 @@ Version 0.0, 23.10.2018, Joseph Doetsch (doetschj)
 import logging
 import dug_seis.acquisition.card_manager as card_manager
 import os.path
+import socket
 
 logger = logging.getLogger('dug-seis')
 
@@ -33,6 +34,18 @@ def acquisition_(param):
     # 0 = fastest, only zeroes used, will lead to high compression rate -> small files, low load
     # 4 = slow, all channels with sine, sawtooth and random data filled -> "worst cast data"
     param['Acquisition']['simulation_amount'] = 1
+
+    hostname = socket.gethostname()
+    if hostname == 'continuous-01-bedretto':
+        param['General']['stats']['daq_unit'] = '01'.zfill(2)
+    elif hostname == 'continuous-02-bedretto':
+        param['General']['stats']['daq_unit'] = '02'.zfill(2)
+    elif hostname == 'continuous-03-bedretto':
+        param['General']['stats']['daq_unit'] = '03'.zfill(2)
+    elif hostname == 'continuous-04-bedretto':
+        param['General']['stats']['daq_unit'] = '04'.zfill(2)
+    else:
+        logger.info('host name not known')
 
     _check_if_hardware_needs_to_be_simulated(param)
     logger.info('used configuration values (from .yaml file) :')

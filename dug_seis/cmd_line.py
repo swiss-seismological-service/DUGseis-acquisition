@@ -58,7 +58,7 @@ def cli(ctx, cfg, verbose, mode, log):
     ch.setLevel(logging.DEBUG if verbose else logging.INFO)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
-    if not log: log = 'dug-seis_%s.log' % datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    if not log: log = 'dugseis_acquisition.log'
     fh = RotatingFileHandler(log)
     fh.setLevel(logging.DEBUG if verbose else logging.INFO)
     fh.formatter = formatter
