@@ -37,6 +37,7 @@ class DataToASDF:
         self.folder_tmp = self.folder + "tmp/"
         self.filename = param['General']['project_name']
         self.compression = param['Acquisition']['asdf_settings']['compression']
+        self.station_naming = param['Acquisition']['asdf_settings']['station_naming']
         self.file_length_sec = param['Acquisition']['asdf_settings']['file_length_sec']
 
         self.l_notify_size = c_int32(param['Acquisition']['bytes_per_transfer'])
@@ -169,7 +170,7 @@ class DataToASDF:
         return inv
 
     def _get_station_name(self, channel_nr):
-        return str(channel_nr).zfill(2)
+        return str(self.station_naming[channel_nr]).zfill(2)
 
     def _add_samples_to_file(self, np_data_list, start_sample, end_sample):
         stream = Stream()
@@ -179,7 +180,7 @@ class DataToASDF:
         for np_data in np_data_list:
 
             for i in range(16):
-                self.stats['location'] = self._get_station_name((i + 16 * card_nr)+1)
+                self.stats['location'] = self._get_station_name(i + 16 * card_nr)
                 stream += Trace(np_data[i, start_sample:end_sample], header=self.stats)
                 # logger.info("{}, {}\n".format(self.stats['station'], self.stats['starttime']))
 
