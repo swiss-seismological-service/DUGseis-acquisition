@@ -34,6 +34,7 @@ def acquisition_(param):
     # 0 = fastest, only zeroes used, will lead to high compression rate -> small files, low load
     # 4 = slow, all channels with sine, sawtooth and random data filled -> "worst cast data"
     param['Acquisition']['simulation_amount'] = 1
+    _check_if_hardware_needs_to_be_simulated(param)
 
     hostname = socket.gethostname()
     if hostname == 'continuous-01-bedretto':
@@ -45,9 +46,12 @@ def acquisition_(param):
     elif hostname == 'continuous-04-bedretto':
         param['General']['stats']['daq_unit'] = '04'.zfill(2)
     else:
-        logger.info('host name not known')
+        if param['Acquisition']['simulation_mode'] == True:
+            param['General']['stats']['daq_unit'] = '99'.zfill(2)
+            logger.info('simulation on host: {}, setting daq_unit to: {}'.format(hostname, param['General']['stats']['daq_unit']))
+        else:
+            logger.info('host name not known')
 
-    _check_if_hardware_needs_to_be_simulated(param)
     logger.info('used configuration values (from .yaml file) :')
     _write_used_param_to_log_recursive(param)
     logger.info('additional information, os.name: {0}, os.getcwd(): {1}'.format(os.name, os.getcwd()))

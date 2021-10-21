@@ -58,7 +58,7 @@ def run(param):
 
     # start
     star_hub.start()
-    data_to_asdf = DataToASDF(param)    # this has to be close to start(), it will set the starttime in the asdf file
+    data_to_asdf = DataToASDF(param)
     if data_to_asdf.error:
         logger.error("an error occurred, closing cards.")
         card1.close()

@@ -35,10 +35,8 @@ class DataToASDF:
         if self.folder[len(self.folder) - 1] != "/":
             self.folder += "/"
         self.folder_tmp = self.folder + "tmp/"
-        self.filename = param['General']['project_name']
         self.compression = param['Acquisition']['asdf_settings']['compression']
         self.station_naming = param['Acquisition']['asdf_settings']['station_naming']
-        self.file_length_sec = param['Acquisition']['asdf_settings']['file_length_sec']
 
         self.l_notify_size = c_int32(param['Acquisition']['bytes_per_transfer'])
 
@@ -53,20 +51,17 @@ class DataToASDF:
 
         self._sampling_rate = param['Acquisition']['hardware_settings']['sampling_frequency']
         self._input_range = param['Acquisition']['hardware_settings']['input_range']
-        self._channel_count = len( param['Acquisition']['hardware_settings']['input_range'] )
-        self._nr_of_data_points = floor(self.l_notify_size.value / 16 / 2)  # nr of channels & 16 bit = 2 bytes
-        # self.file_length_in_samples = self._nr_of_data_points * 5  # a length that does not split transferred blocks
-        self.file_length_in_samples = int(self.file_length_sec * self._sampling_rate)
-        if self.file_length_in_samples < self._nr_of_data_points:
+
+        _nr_of_data_points = floor(c_int32(param['Acquisition']['bytes_per_transfer']).value / 16 / 2)  # nr of channels & 16 bit = 2 bytes
+        self.file_length_in_samples = int(param['Acquisition']['asdf_settings']['file_length_sec'] * self._sampling_rate)
+        if self.file_length_in_samples < _nr_of_data_points:
             logger.error('file_length_sec cannot be shorter than one buffer transfer: {} seconds'
-                         .format(self._nr_of_data_points/self._sampling_rate))
+                         .format(_nr_of_data_points/self._sampling_rate))
             self.error = True
         else:
             self.error = False
         self._file_handle = None
-        self._time_age_of_file = 0  # keeps track internally how old the file is
         self._last_used_file_name = None
-        self._really_verbose_timing_output = False
         self._last_used_julian_day = -1
         self._last_used_julian_day_folder = ""
 
@@ -115,8 +110,6 @@ class DataToASDF:
         logger.info("samples in file = {0}".format(self.file_length_in_samples))
         logger.info("_create_new_file with folder_file_name = {0}".format(folder_file_name))
 
-
-        self._time_age_of_file = time.time()
         # logger.info("self.compression = {}, type = {}".format(self.compression, type(self.compression)))
         if self.compression == 'None':
             # logger.info("if self.compression = None: -> true")
@@ -129,7 +122,6 @@ class DataToASDF:
             os.rename(self.folder_tmp + self._last_used_file_name, self._last_used_julian_day_folder + self._last_used_file_name)
         self._last_used_file_name = file_name
 
-        # self._add_all_station_xml_s(self._file_handle)
         self._add_all_auxiliary_data(self._file_handle)
 
     def _add_all_auxiliary_data(self, ds):
@@ -140,41 +132,11 @@ class DataToASDF:
         ds.add_auxiliary_data(data=np.array(self._input_range), data_type="hardware_settings", path="input_range",
                               parameters={})
 
-    def _add_all_station_xml_s(self, ds):
-        for i in range(self._channel_count):
-            ds.add_stationxml(self._create_station_xml(i))
-
-    def _create_station_xml(self, channel_nr):
-        inv = get_flat_response_inventory(
-            sensitivity_value=self._input_range[channel_nr] * 2 / 65536,  # conversion 16bit int to mV
-            sensitivity_frequency=1.0,
-            input_units="M/S",  # ?
-            output_units="Counts",  # ?
-            creation_date=UTCDateTime(self._time_age_of_file),
-            network_code=self.stats['network'],
-            station_code=self.stats['station'],
-            location_code=self._get_station_name(channel_nr),
-            channel_code=self.stats['channel'],
-            sampling_rate=self.stats['sampling_rate'],
-            latitude=self.stats['origin_ch1903_north'],
-            longitude=self.stats['origin_ch1903_east'],
-            depth=self.stats['origin_elev'],
-            elevation=0.0,
-            azimuth=0.0,
-            dip=0.0)
-
-        # Test if the response makes up a valid StationXML file.
-        with io.BytesIO() as buf:
-            inv.write(buf, format="stationxml", validate=True)
-
-        return inv
-
     def _get_station_name(self, channel_nr):
         return str(self.station_naming[channel_nr]).zfill(2)
 
     def _add_samples_to_file(self, np_data_list, start_sample, end_sample):
         stream = Stream()
-        # self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])# adjust stats['starttime'], stream can only read UTCDateTime stamps and not nanoseconds in integer
 
         card_nr = 0
         for np_data in np_data_list:
@@ -182,7 +144,6 @@ class DataToASDF:
             for i in range(16):
                 self.stats['location'] = self._get_station_name(i + 16 * card_nr)
                 stream += Trace(np_data[i, start_sample:end_sample], header=self.stats)
-                # logger.info("{}, {}\n".format(self.stats['station'], self.stats['starttime']))
 
             del np_data
             card_nr += 1
@@ -218,31 +179,15 @@ class DataToASDF:
         # logger.info("data_points_to_file1: {}".format(data_points_to_file1))
         if data_points_to_file1 > 0:
             stream = self._add_samples_to_file(np_data_list, 0, data_points_to_file1)
-            # logger.info("file handle: {}".format(self._file_handle))
-            # logger.info(stream)
-            # logger.info(type(self.stats['starttime']))
-            # logger.info(self.stats['starttime'])
             logger.info("start time of stream = {0}".format(UTCDateTime(ns=self.stats['starttime_ns'])))
             self._file_handle.append_waveforms(stream, tag="raw_recording")
             del stream
-
-        # logger.info("---")
-        # logger.info(self.stats['starttime'])
-
-        # vorher = self.stats['starttime']
 
         # starttime for next segment
         # self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
         self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(data_points_to_file1 * (self.stats['delta'] * 10 ** 9))
         self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
         logger.info("time delta between files in ns = {0}".format(int(data_points_to_file1 * (self.stats['delta'] * 10 ** 9))))
-        # logger.info("data_points_in_this_file = {0}".format(self._data_points_in_this_file))
-        # logger.info("seconds in this_file = {0}".format(self._data_points_in_this_file / self._sampling_rate))
-        # logger.info("start_time_of next file = {0}".format(self.stats['starttime']))
-        # self.stats['starttime'] = UTCDateTime(self.stats['starttime']) + data_points_to_file1 / self._sampling_rate
-        # nacher = self.stats['starttime']
-        # logger.info('{} {} {}'.format(vorher, nacher, vorher-nacher, type(nacher)))
-        # logger.info('{}'.format(data_points_to_file1 / self._sampling_rate))
 
         if data_points_to_file2 != 0:
             # logger.info("data_points_to_file2: {}".format(data_points_to_file2))
@@ -257,8 +202,3 @@ class DataToASDF:
             self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
             logger.info("time delta between files in ns = {0}".format(
                 int(self._data_points_in_this_file * (self.stats['delta'] * 10 ** 9))))
-        # else:
-            # starttime for next segment
-            # self.stats['starttime'] = UTCDateTime(self.stats['starttime']) + self._nr_of_data_points / self._sampling_rate
-
-        # logger.info("self.stats[ starttime ] = {}".format(self.stats['starttime']))
