@@ -20,6 +20,7 @@ import numpy as np
 
 from dug_seis.acquisition.time_stamps import TimeStamps
 from dug_seis.acquisition.file_handling import FileHandling
+from dug_seis.acquisition.stats_handling import StatsHandling
 
 logger = logging.getLogger('dug-seis')
 
@@ -27,20 +28,6 @@ logger = logging.getLogger('dug-seis')
 class DataToASDF:
 
     def __init__(self, param):
-
-        self.station_naming = param['Acquisition']['asdf_settings']['station_naming']
-
-        self.l_notify_size = c_int32(param['Acquisition']['bytes_per_transfer'])
-
-        self.stats = {'network': param['General']['stats']['network'],
-                      'station': param['General']['stats']['daq_unit'],
-                      'location': '00',
-                      'channel': '001',
-                      'starttime': '',
-                      'delta': 1/param['Acquisition']['hardware_settings']['sampling_frequency'],
-                      'gain': '0'
-                      }
-
         self._sampling_rate = param['Acquisition']['hardware_settings']['sampling_frequency']
 
         _nr_of_data_points = floor(c_int32(param['Acquisition']['bytes_per_transfer']).value / 16 / 2)  # nr of channels & 16 bit = 2 bytes
@@ -56,24 +43,21 @@ class DataToASDF:
 
         self.time_stamps = TimeStamps(param)
         self.file_handling = FileHandling(param)
+        self.stats_handling = StatsHandling(param)
 
     def set_starttime_now(self):
         self.time_stamps.set_starttime_now()
 
-    def _get_station_name(self, channel_nr):
-        return str(self.station_naming[channel_nr]).zfill(2)
-
     def _add_samples_to_file(self, np_data_list, start_sample, end_sample):
         stream = Stream()
-
-        self.stats['starttime'] = self.time_stamps.starttime_UTCDateTime()
+        self.stats_handling.set_starttime( self.time_stamps.starttime_UTCDateTime() )
 
         card_nr = 0
         for np_data in np_data_list:
 
             for i in range(16):
-                self.stats['location'] = self._get_station_name(i + 16 * card_nr)
-                stream += Trace(np_data[i, start_sample:end_sample], header=self.stats)
+                self.stats_handling.set_location(card_nr, i)
+                stream += Trace(np_data[i, start_sample:end_sample], header=self.stats_handling.get_stats())
 
             del np_data
             card_nr += 1
