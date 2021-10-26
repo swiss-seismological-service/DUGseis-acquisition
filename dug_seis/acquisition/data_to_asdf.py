@@ -9,7 +9,7 @@
 """Read data from an array to a ASDF file.
 Create a new file when needed.
 """
-import time
+# import time
 import logging
 import os
 import io
@@ -17,13 +17,12 @@ import io
 from ctypes import c_int32
 
 from math import floor
-from obspy.core import Stream, Trace, UTCDateTime
-from obspy.core.inventory import Longitude, Latitude
+from obspy.core import Stream, Trace
 
 import pyasdf
 import numpy as np
 
-from dug_seis.acquisition.flat_response_stationxml import get_flat_response_inventory
+from dug_seis.acquisition.time_stamps import TimeStamps
 
 logger = logging.getLogger('dug-seis')
 
@@ -44,7 +43,7 @@ class DataToASDF:
                       'station': param['General']['stats']['daq_unit'],
                       'location': '00',
                       'channel': '001',
-                      'starttime': UTCDateTime().timestamp,
+                      'starttime': '',
                       'delta': 1/param['Acquisition']['hardware_settings']['sampling_frequency'],
                       'gain': '0'
                       }
@@ -62,19 +61,14 @@ class DataToASDF:
             self.error = False
         self._file_handle = None
         self._last_used_file_name = None
-        self._last_used_julian_day = -1
-        self._last_used_julian_day_folder = ""
 
+        self._last_used_julian_day_folder = ""
         self._data_points_in_this_file = 0
 
-    def set_starttime_now(self):
-        starttime_now = UTCDateTime().ns
-        self.stats['starttime_ns'] = round(starttime_now, -9) - int((4 * self.stats['delta'] * 10**9))  # balance 4
-        # samples pre-trigger from start time in seconds
-        self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
+        self.time_stamps = TimeStamps(param)
 
-        logger.info("new starttime set to: {}".format(UTCDateTime(ns=self.stats['starttime_ns'])))
-        logger.info("new starttime, software: {}".format(UTCDateTime(ns=starttime_now)))
+    def set_starttime_now(self):
+        self.time_stamps.set_starttime_now()
 
     def _check_if_folders_exist_create_if_needed(self):
         if not os.path.isdir(self.folder):
@@ -86,28 +80,26 @@ class DataToASDF:
             logger.info("creating folder_tmp: {}".format(self.folder_tmp))
 
     def _creat_new_julian_day_folder_if_needed(self):
-        if UTCDateTime(ns=self.stats['starttime_ns']).julday != self._last_used_julian_day:
-            self._last_used_julian_day = UTCDateTime(ns=self.stats['starttime_ns']).julday
-            self._last_used_julian_day_folder = self.folder + str(self._last_used_julian_day) + '/'
+        if self.time_stamps.is_julian_day_still_the_same():
+            pass
+        else:
+            self.time_stamps.set_current_julian_day()
+            self._last_used_julian_day_folder = self.folder + self.time_stamps.julian_day_str() + '/'
             if os.path.isdir(self._last_used_julian_day_folder):
                 logger.info("julianday folder: {} already exists, no need to create it.".format(self._last_used_julian_day_folder))
             else:
                 logger.info("creating julianday folder: {}".format(self._last_used_julian_day_folder))
                 os.makedirs(self._last_used_julian_day_folder)
 
-
     def _create_new_file(self):
         """Creates a new file.
         With parameters of the DataToAsdf class. Sets the age of the file to time.time()."""
 
         file_name = "{0}__{1}__{2}.h5".format(
-            UTCDateTime(ns=self.stats['starttime_ns']),
-            UTCDateTime(ns=self.stats['starttime_ns'] + int((self.file_length_in_samples-1) * (self.stats['delta'] * 10**9))),
+            self.time_stamps.starttime_str(),
+            self.time_stamps.endtime_str(),
             self.stats['station'].zfill(2))
-        file_name = file_name.replace(":", "_")
-        file_name = file_name.replace("-", "_")
         folder_file_name = "{0}{1}".format(self.folder_tmp, file_name)
-        logger.info("samples in file = {0}".format(self.file_length_in_samples))
         logger.info("_create_new_file with folder_file_name = {0}".format(folder_file_name))
 
         # logger.info("self.compression = {}, type = {}".format(self.compression, type(self.compression)))
@@ -137,6 +129,8 @@ class DataToASDF:
 
     def _add_samples_to_file(self, np_data_list, start_sample, end_sample):
         stream = Stream()
+
+        self.stats['starttime'] = self.time_stamps.starttime_UTCDateTime()
 
         card_nr = 0
         for np_data in np_data_list:
@@ -179,15 +173,12 @@ class DataToASDF:
         # logger.info("data_points_to_file1: {}".format(data_points_to_file1))
         if data_points_to_file1 > 0:
             stream = self._add_samples_to_file(np_data_list, 0, data_points_to_file1)
-            logger.info("start time of stream = {0}".format(UTCDateTime(ns=self.stats['starttime_ns'])))
+            logger.info("start time of stream = {0}".format(self.time_stamps.starttime_str()))
             self._file_handle.append_waveforms(stream, tag="raw_recording")
             del stream
 
         # starttime for next segment
-        # self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
-        self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(data_points_to_file1 * (self.stats['delta'] * 10 ** 9))
-        self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
-        logger.info("time delta between files in ns = {0}".format(int(data_points_to_file1 * (self.stats['delta'] * 10 ** 9))))
+        self.time_stamps.set_starttime_next_segment( int(data_points_to_file1) )
 
         if data_points_to_file2 != 0:
             # logger.info("data_points_to_file2: {}".format(data_points_to_file2))
@@ -196,9 +187,4 @@ class DataToASDF:
             stream = self._add_samples_to_file(np_data_list, data_points_to_file1, int(np_data_list[0].size / 16))
             self._file_handle.append_waveforms(stream, tag="raw_recording")
             del stream
-            # self.stats['starttime'] = UTCDateTime(self.stats['starttime']) + self._data_points_in_this_file / self._sampling_rate
-            # self.stats['starttime'] = self.stats['starttime'] + self._data_points_in_this_file / self._sampling_rate
-            self.stats['starttime_ns'] = self.stats['starttime_ns'] + int(self._data_points_in_this_file * (self.stats['delta'] * 10 ** 9))
-            self.stats['starttime'] = UTCDateTime(ns=self.stats['starttime_ns'])
-            logger.info("time delta between files in ns = {0}".format(
-                int(self._data_points_in_this_file * (self.stats['delta'] * 10 ** 9))))
+            self.time_stamps.set_starttime_next_segment( int(self._data_points_in_this_file ))

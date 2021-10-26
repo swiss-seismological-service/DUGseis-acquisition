@@ -57,7 +57,7 @@ class SimulatedHardware:
         self._timestamp_last_call = time.time()
 
     def _simulated_trigger_received(self):
-        time.sleep(10)
+        time.sleep(3)
         return True
 
     def mock_card(self, card):
