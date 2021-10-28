@@ -33,7 +33,8 @@ def plot_waveform(dataStream):
         ax1.set_axisbelow(True)
         ax1.plot(samp_v, dataStream[i].data, linewidth=0.25, marker='o')
         ax1.set_yticklabels([])
-        ax1.set_ylabel(dataStream.traces[i].stats.station + '  ', rotation=90, fontsize=12)
+        ax1.set_ylabel('sta:' + dataStream.traces[i].stats.station +
+                       ' ch:' + dataStream.traces[i].stats.location, rotation=90, fontsize=12)
 
         ax1.set_xlim([np.min(samp_v), np.max(samp_v)])
         ax1.spines['right'].set_visible(False)
