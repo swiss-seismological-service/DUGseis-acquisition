@@ -5,12 +5,11 @@ from obspy.core import Stream
 import plot_waveform_v03_only_wave as plot
 from obspy.core import UTCDateTime
 
-def plot_simple(asdf_folder, channel_array, starttime_relative_sec, length_sec, max_points=10**5):
+def plot_simple(asdf_folder, channel_array, starttime_relative_sec, length_sec, max_points=10**5, max_files=3):
     print(asdf_folder)
     print(channel_array)
 
     asdf_list = list(sorted(asdf_folder.glob('*.h5')))
-    fast_mode = False
 
     file_names = []
     npts_all = []
@@ -42,7 +41,8 @@ def plot_simple(asdf_folder, channel_array, starttime_relative_sec, length_sec, 
                                                  starttime=start_time_first_file + starttime_relative_sec,
                                                  endtime=start_time_first_file + starttime_relative_sec + length_sec,
                                                  tag="raw_recording")
-        if index >= 2 and fast_mode:
+        if index >= max_files-1:
+            print("\nskipping other files (use max_files= to load more files)")
             break
 
     print("")

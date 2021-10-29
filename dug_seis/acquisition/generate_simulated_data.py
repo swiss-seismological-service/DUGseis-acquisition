@@ -17,7 +17,7 @@ from ctypes import create_string_buffer
 logger = logging.getLogger('dug-seis')
 
 def generate_data_for_pv_buffer(size, amount):
-    # amount can be 0...4
+    # amount can be 0...5
     pv_buffer = create_string_buffer(size)
     fill_percent = 2  # 100 fills up all buffer
     ts = time.time()
@@ -25,9 +25,9 @@ def generate_data_for_pv_buffer(size, amount):
     if amount == 0:
         logger.info("pv_buffer with no data, all zero, will lead to high compression rate -> small files, low load")
 
-    if amount > 2:
+    if amount > 3:
         logger.info("generating random data for all channels storing in RAM ringbuffer: pv_buffer")
-        if amount > 3:
+        if amount > 4:
             fill_percent = 100
         logger.info("only filling up {}% of buffer, to speed things up".format(fill_percent))
         logger.info("the part which is not filled is 0 and leads to a high compression rate -> small files, low load")
@@ -48,28 +48,30 @@ def generate_data_for_pv_buffer(size, amount):
             pv_buffer[i] = value & 0xff
             pv_buffer[i + 1] = (value >> 8) & 0xff
             if time.time() > ts:
-                logger.info("channel 0 and 16 sine wave 20000 amplitude. i: {}, {}%".format(i, int(i / size * 100)))
+                logger.info("channel 1 and 17 sine wave 20000 amplitude. i: {}, {}%".format(i, int(i / size * 100)))
                 ts = time.time() + 2
 
     if amount > 1:
-        channel_byte_offset = 2  # 2byte offset = next channel, reordering leads to channel 002
+        # 2byte offset = next channel, reordering leads to channel 002
+        # something changed its 4bytes now?
+        channel_byte_offset = 4
         value = 0
         for i in range(0 + channel_byte_offset, int(len(pv_buffer) * fill_percent / 100) + channel_byte_offset, 32):
             pv_buffer[i] = value & 0xff
             pv_buffer[i + 1] = (value >> 8) & 0xff
             value += 1
             if time.time() > ts:
-                logger.info("channel 1 and 18 ramp upwards, +1 per time step.i:{}, {}%".format(i, int(i / size * 100)))
+                logger.info("channel 2 and 18 ramp upwards, +1 per time step.i:{}, {}%".format(i, int(i / size * 100)))
                 ts = time.time() + 2
 
-    if amount > 1:
-        channel_byte_offset = 4
+    if amount > 2:
+        channel_byte_offset = 8
         for i in range(0 + channel_byte_offset, int(len(pv_buffer) * fill_percent / 100) + channel_byte_offset, 32):
-            value = int(sin(i / 1100000 * 0.6) * 32768)
+            value = int(sin(i / 1100000 * 1000) * 32768)
             pv_buffer[i] = value & 0xff
             pv_buffer[i + 1] = (value >> 8) & 0xff
             if time.time() > ts:
-                logger.info("channel 4 and 20 sine wave 32768 amplitude. i: {}, {}%".format(i, int(i / size * 100)))
+                logger.info("channel 3 and 19 sine wave 32768 amplitude. i: {}, {}%".format(i, int(i / size * 100)))
                 ts = time.time() + 2
 
     logger.info("generation for this card finished")
