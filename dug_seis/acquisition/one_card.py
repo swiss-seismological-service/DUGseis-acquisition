@@ -50,12 +50,11 @@ class Card:
         # nr of channels & 16 bit = 2 bytes
         self._nr_of_datapoints = floor(param['Acquisition']['bytes_per_transfer'] / 16 / 2)
 
-        input_range = param['Acquisition']['hardware_settings']['input_range']
+        input_range_sorted = param['Acquisition']['hardware_settings']['input_range_sorted']
         if card_nr == 0:
-            self.scaling_this_card = [i * 2 / 65536 for i in input_range[0:16]]   # e.g. 16 bit to +- 10'000 mV
+            self.scaling_this_card = [i * 2 / 65536 for i in input_range_sorted[0:16]]   # e.g. 16 bit to +- 10'000 mV
         else:
-            self.scaling_this_card = [i * 2 / 65536 for i in input_range[16:32]]
-        # logger.info("scaling_this_card: {}".format(', '.join(str(e) for e in self.scaling_this_card)))
+            self.scaling_this_card = [i * 2 / 65536 for i in input_range_sorted[16:32]]
 
     def init_card(self, param):
         """Initialise card. Setup card parameters. Reserve buffers for DMA data transfer."""

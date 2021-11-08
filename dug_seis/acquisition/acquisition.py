@@ -52,6 +52,8 @@ def acquisition_(param):
         else:
             logger.info('host name not known')
 
+    param['Acquisition']['hardware_settings']['input_range_sorted'] = _sorted_input_ranges(param)
+
     logger.info('used configuration values (from .yaml file) :')
     _write_used_param_to_log_recursive(param)
     logger.info('additional information, os.name: {0}, os.getcwd(): {1}'.format(os.name, os.getcwd()))
@@ -112,3 +114,14 @@ def _write_used_param_to_log_recursive(param_dict):
         else:
             # print('{}: {}'.format(key, value))
             logger.info('{}: {}'.format(key, value))
+
+def _sorted_input_ranges(param):
+    input_range = param['Acquisition']['hardware_settings']['input_range']
+    station_naming = param['Acquisition']['asdf_settings']['station_naming']
+    input_range_sorted = input_range.copy()
+    ch_nr = 0;
+    for x in station_naming:
+        input_range_sorted[int(x)-1] = (input_range[ch_nr])
+        # logger.info('x: {}'.format( int(x) ))
+        ch_nr = ch_nr+1
+    return input_range_sorted

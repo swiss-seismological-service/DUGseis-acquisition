@@ -51,6 +51,8 @@ def plot_simple(asdf_folder, channel_array, starttime_relative_sec, length_sec, 
     print(" - done")
     stream_1.print_gaps()
 
+    stream_2 = stream_1.copy()
+
     nr_datapoints = stream_1.count() * stream_1.traces[0].data.size
     print("total data points to plot: {}".format(nr_datapoints), end='')
     if nr_datapoints > max_points:
@@ -61,3 +63,5 @@ def plot_simple(asdf_folder, channel_array, starttime_relative_sec, length_sec, 
         print()
 
     plot.plot_waveform(stream_1)
+    return stream_2
+

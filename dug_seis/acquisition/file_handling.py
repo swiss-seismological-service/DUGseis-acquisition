@@ -33,7 +33,7 @@ class FileHandling:
         self._last_used_file_name = None
         self._last_used_julian_day_folder = ""
 
-        self._input_range = param['Acquisition']['hardware_settings']['input_range']
+        self._input_range_sorted = param['Acquisition']['hardware_settings']['input_range_sorted']
 
     def _check_if_folders_exist_create_if_needed(self):
         if not os.path.isdir(self.folder):
@@ -84,9 +84,9 @@ class FileHandling:
     def _add_all_auxiliary_data(self, ds):
         # pyasdf.ASDFDataSet.add_auxiliary_data
         # stuff that is not in self.stats
-        ds.add_auxiliary_data(data=np.array([True]), data_type="hardware_settings", path="various",
-                              parameters={"exampleValue": 5})
-        ds.add_auxiliary_data(data=np.array(self._input_range), data_type="hardware_settings", path="input_range",
+        # ds.add_auxiliary_data(data=np.array([True]), data_type="hardware_settings", path="various",
+        #                      parameters={"exampleValue": 5})
+        ds.add_auxiliary_data(data=np.array(self._input_range_sorted), data_type="hardware_settings", path="input_range_sorted",
                               parameters={})
 
     def append_waveform_to_file(self, time_stamps, stream):

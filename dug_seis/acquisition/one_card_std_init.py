@@ -64,15 +64,15 @@ def init_card(param, card_nr):
     wait_for_trigger = param['Acquisition']['hardware_settings']['wait_for_trigger']
     external_clock = param['Acquisition']['hardware_settings']['external_clock']
 
-    input_range = param['Acquisition']['hardware_settings']['input_range']
+    input_range_sorted = param['Acquisition']['hardware_settings']['input_range_sorted']
 
     """ open card """
     if card_nr == 0:
         h_card = spcm_hOpen(create_string_buffer(b'/dev/spcm0'))
-        input_range_this_card = input_range[0:16]
+        input_range_this_card = input_range_sorted[0:16]
     else:
         h_card = spcm_hOpen(create_string_buffer(b'/dev/spcm1'))
-        input_range_this_card = input_range[16:32]
+        input_range_this_card = input_range_sorted[16:32]
     if h_card is None:
         logger.error("card {} not found...".format(card_nr))
         return -1
