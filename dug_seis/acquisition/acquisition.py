@@ -115,13 +115,17 @@ def _write_used_param_to_log_recursive(param_dict):
             # print('{}: {}'.format(key, value))
             logger.info('{}: {}'.format(key, value))
 
+
 def _sorted_input_ranges(param):
     input_range = param['Acquisition']['hardware_settings']['input_range']
     station_naming = param['Acquisition']['asdf_settings']['station_naming']
+    multiplex_order = [x - 1 for x in station_naming]
     input_range_sorted = input_range.copy()
-    ch_nr = 0;
-    for x in station_naming:
-        input_range_sorted[int(x)-1] = (input_range[ch_nr])
-        # logger.info('x: {}'.format( int(x) ))
-        ch_nr = ch_nr+1
+    input_range_sorted[:] = [input_range_sorted[i] for i in multiplex_order]
+    # ch_nr = 0
+    # for x in station_naming:
+    #     input_range_sorted[int(x)-1] = (input_range[ch_nr])
+    #     # logger.info('x: {}'.format( int(x) ))
+    #     ch_nr = ch_nr+1
+    input_range_sorted = input_range
     return input_range_sorted
