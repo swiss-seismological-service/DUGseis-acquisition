@@ -21,6 +21,8 @@ from dug_seis.acquisition.data_to_asdf import DataToASDF
 
 from dug_seis.acquisition.hardware_mockup import SimulatedHardware
 
+import dug_seis.acquisition.streaming
+
 logger = logging.getLogger('dug-seis')
 
 
@@ -66,6 +68,13 @@ def run(param):
         star_hub.close()
         exit(1)
 
+    #
+    # start the data streaming servers
+    #
+    servers = streaming.create_servers(param):
+    for server in servers:
+        server.start()
+
     # wait?
     # card1.wait_for_data()
     # card2.wait_for_data()
@@ -94,7 +103,9 @@ def run(param):
                 # print("card2 data ready to be read: {} bytes ready".format(card2.nr_of_bytes_available()))
 
                 timestamp_before_eval = time.time()
-                data_to_asdf.data_to_asdf([card1.read_data(), card2.read_data()])
+                cards_data = [card1.read_data(), card2.read_data()]
+                streaming.feed_servers(servers, cards_data, data_to_asdf.time_stamps.starttime_UTCDateTime())
+                data_to_asdf.data_to_asdf(cards_data)
                 card1.data_has_been_read()
                 card2.data_has_been_read()
                 logger.debug("loop took: {:.2f} sec, processing for: {:.2f} -> {}%"
@@ -108,9 +119,12 @@ def run(param):
             time.sleep(0.1)
             # print("had time to sleep here {}, {}".format(card1.nr_of_bytes_available(), bytes_per_transfer))
 
+    # shutdown
+    for server in servers:
+        server.stop()
 
 """
-# shutdown (is this optional?)
+# is this optional?
 card1.stop_recording()
 card2.stop_recording()
 
