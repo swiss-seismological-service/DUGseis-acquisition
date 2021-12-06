@@ -21,7 +21,7 @@ from dug_seis.acquisition.data_to_asdf import DataToASDF
 
 from dug_seis.acquisition.hardware_mockup import SimulatedHardware
 
-import dug_seis.acquisition.streaming
+import dug_seis.acquisition.streaming as streaming
 
 logger = logging.getLogger('dug-seis')
 
@@ -71,7 +71,7 @@ def run(param):
     #
     # start the data streaming servers
     #
-    servers = streaming.create_servers(param):
+    servers = streaming.create_servers(param)
     for server in servers:
         server.start()
 

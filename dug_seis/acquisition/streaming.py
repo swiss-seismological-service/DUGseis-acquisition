@@ -25,6 +25,7 @@ import numpy as np
 
 import math
 from random import randrange
+from logging.handlers import RotatingFileHandler
 
 logger = logging.getLogger('dug-seis')
 
@@ -366,22 +367,21 @@ def create_servers(param):
     sampling_rate = param['Acquisition']['hardware_settings']['sampling_frequency']
     streamers = []
     for server in param['Acquisition']['streaming_servers']:
+        print(f"server {server}")
         channels = []
-        for ch_id in server['channels']
-            if ch_id == int(ch_id)
-                channels.append(Channel(int(ch_id), sampling_rate))
-            elif '-' in ch_id:
+        for ch_id in server['channels']:
+            if str(ch_id).isdigit():
+                channels.append(Channel(int(ch_id), sampling_rate, sys.byteorder, 2))
+            else:
                 a, b = ch_id.split('-')
                 for ch_id in range(int(a), int(b) + 1):
                     channels.append(Channel(ch_id, sampling_rate, sys.byteorder, 2))
-            else:
-                raise ValueError("Unrecognized channel {ch_id}")
         streamer = Streamer(channels, host=server['host'], port=server['port'])
         streamers.append(streamer)
     return streamers
 
 def feed_servers(streamers, cards_data, data_timestamp):
-    for card_nr in len(cards_data):
+    for card_nr in range(len(cards_data)):
         card_data = cards_data[card_nr]
         num_samps = int(card_data.size / 16)
         for i in range(16):

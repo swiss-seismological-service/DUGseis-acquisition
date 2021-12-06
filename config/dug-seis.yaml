@@ -35,11 +35,6 @@ Acquisition:
     file_length_sec           : 10.0
 
   streaming_servers:
-    - server1:
-        host                  : 127.0.0.1
+    -   host                  : "" # emtpy means all interfaces/ip addresses
         port                  : 65535
-        channels              : [1-16]
-    - server2:
-        host                  : 127.0.0.1
-        port                  : 65534
-        channels              : [17-32]
+        channels              : [1-32]
