@@ -93,42 +93,43 @@ def run(param):
     data_to_asdf.set_starttime_now()
     logger.info("Acquisition started...")
 
-    while True:
-        # polling scheme here, might not be the best?
+    try:
+        while True:
+            # polling scheme here, might not be the best?
 
-        if card1.nr_of_bytes_available() >= bytes_per_transfer:
-            # print("card1 data ready to be read: {} bytes ready".format(card1.nr_of_bytes_available()))
-            if card2.nr_of_bytes_available() >= bytes_per_transfer:
-                # print("card 1 & 2 data ready to be read")
-                # print("card2 data ready to be read: {} bytes ready".format(card2.nr_of_bytes_available()))
+            if card1.nr_of_bytes_available() >= bytes_per_transfer:
+                # print("card1 data ready to be read: {} bytes ready".format(card1.nr_of_bytes_available()))
+                if card2.nr_of_bytes_available() >= bytes_per_transfer:
+                    # print("card 1 & 2 data ready to be read")
+                    # print("card2 data ready to be read: {} bytes ready".format(card2.nr_of_bytes_available()))
 
-                timestamp_before_eval = time.time()
-                cards_data = [card1.read_data(), card2.read_data()]
-                streaming.feed_servers(servers, cards_data, data_to_asdf.time_stamps.starttime_UTCDateTime())
-                data_to_asdf.data_to_asdf(cards_data)
-                card1.data_has_been_read()
-                card2.data_has_been_read()
-                logger.debug("loop took: {:.2f} sec, processing for: {:.2f} -> {}%"
-                              .format(time.time()-time_stamp_this_loop, time.time()-timestamp_before_eval,
-                              int((time.time() - timestamp_before_eval)/(time.time() - time_stamp_this_loop)*100.0)))
-                time_stamp_this_loop = time.time()
+                    timestamp_before_eval = time.time()
+                    cards_data = [card1.read_data(), card2.read_data()]
+                    streaming.feed_servers(servers, cards_data, data_to_asdf.time_stamps.starttime_UTCDateTime())
+                    data_to_asdf.data_to_asdf(cards_data)
+                    card1.data_has_been_read()
+                    card2.data_has_been_read()
+                    logger.debug("loop took: {:.2f} sec, processing for: {:.2f} -> {}%"
+                                  .format(time.time()-time_stamp_this_loop, time.time()-timestamp_before_eval,
+                                  int((time.time() - timestamp_before_eval)/(time.time() - time_stamp_this_loop)*100.0)))
+                    time_stamp_this_loop = time.time()
+                else:
+                    time.sleep(0.1)
+                    # print("had time to sleep here (inner loop)")
             else:
                 time.sleep(0.1)
-                # print("had time to sleep here (inner loop)")
-        else:
-            time.sleep(0.1)
-            # print("had time to sleep here {}, {}".format(card1.nr_of_bytes_available(), bytes_per_transfer))
+                # print("had time to sleep here {}, {}".format(card1.nr_of_bytes_available(), bytes_per_transfer))
+    except KeyboardInterrupt:
+        logger.info("KeyboardInterrupt detected, exiting...")
 
     # shutdown
     for server in servers:
         server.stop()
 
-"""
-# is this optional?
-card1.stop_recording()
-card2.stop_recording()
+    # is this optional?
+    #card1.stop_recording()
+    #card2.stop_recording()
 
-card1.close()
-card2.close()
-star_hub.close()
-"""
+    #card1.close()
+    #card2.close()
+    #star_hub.close()
