@@ -22,6 +22,7 @@ import datetime
 import time
 import sys
 import numpy as np
+import signal
 
 import math
 from random import randrange
@@ -294,6 +295,8 @@ def _start_asyncio_server(channels, data_conn, host, port, backlog):
     logger.addHandler(hdlr)
 
     logging.getLogger("asyncio").setLevel(logging.WARNING)
+
+    signal.signal(signal.SIGINT, signal.SIG_IGN) # do not crash at ctrl-c
 
     server = Server(channels, data_conn, host, port, backlog)
     asyncio.run(server.run())
