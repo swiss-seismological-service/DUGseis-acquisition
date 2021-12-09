@@ -24,7 +24,7 @@ def acquisition_(param):
     # print("logger level: " + logging.getLevelName(logger.level));
 
     param['Acquisition']['simulation_mode'] = False     # should be False, or no real data is recorded when True!
-    param['Acquisition']['bytes_per_stream_packet'] = 8*1024*1024
+    param['Acquisition']['bytes_per_stream_packet'] = 1*1024*1024
     # 32 * 1024 * 1024   # in bytes (amount of data processed per python call)
     param['Acquisition']['bytes_per_transfer'] = 32*1024*1024
     # 128 * 1024 * 1024 # in bytes (computer memory reserved for data)
