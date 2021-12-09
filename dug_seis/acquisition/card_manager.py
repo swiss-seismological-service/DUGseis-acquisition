@@ -26,6 +26,7 @@ logger = logging.getLogger('dug-seis')
 
 def run(param):
     bytes_per_transfer = param['Acquisition']['bytes_per_transfer']
+    bytes_per_stream_packet = param['Acquisition']['bytes_per_stream_packet']
     simulation_mode = param['Acquisition']['simulation_mode']
 
     # make classes
@@ -84,30 +85,38 @@ def run(param):
     data_to_asdf.set_starttime_now()
     logger.info("Acquisition started...")
 
+    bytes_offset = 0
+    t_stream = 0
     while True:
         # polling scheme here, might not be the best?
+        card1_bytes_available = card1.nr_of_bytes_available()
+        card2_bytes_available = card2.nr_of_bytes_available()
 
-        if card1.nr_of_bytes_available() >= bytes_per_transfer:
-            # print("card1 data ready to be read: {} bytes ready".format(card1.nr_of_bytes_available()))
-            if card2.nr_of_bytes_available() >= bytes_per_transfer:
-                # print("card 1 & 2 data ready to be read")
-                # print("card2 data ready to be read: {} bytes ready".format(card2.nr_of_bytes_available()))
+        while card1_bytes_available >= bytes_offset + bytes_per_stream_packet\
+                and card2_bytes_available >= bytes_offset + bytes_per_stream_packet:
+            t1 = time.time()
+            np = card1.read_data(bytes_per_stream_packet, bytes_offset)
+            np2 = card2.read_data(bytes_per_stream_packet, bytes_offset)
+            logger.info("streaming offset: {}, np_data: {} x {}".format(bytes_offset, len(np), len(np[1])))
+            bytes_offset += bytes_per_stream_packet
+            t_stream += time.time()-t1
 
-                timestamp_before_eval = time.time()
-                data_to_asdf.data_to_asdf([card1.read_data(), card2.read_data()])
-                card1.data_has_been_read()
-                card2.data_has_been_read()
-                logger.debug("loop took: {:.2f} sec, processing for: {:.2f} -> {}%"
-                              .format(time.time()-time_stamp_this_loop, time.time()-timestamp_before_eval,
-                              int((time.time() - timestamp_before_eval)/(time.time() - time_stamp_this_loop)*100.0)))
-                time_stamp_this_loop = time.time()
-            else:
-                time.sleep(0.1)
-                # print("had time to sleep here (inner loop)")
+        if card1_bytes_available >= bytes_per_transfer \
+                and card2_bytes_available >= bytes_per_transfer:
+
+            t2 = time.time()
+            data_to_asdf.data_to_asdf([card1.read_data(bytes_per_transfer, 0), card2.read_data(bytes_per_transfer, 0)])
+            card1.data_has_been_read()
+            card2.data_has_been_read()
+            bytes_offset = 0
+            t1 = 0
+            logger.info("loop took: {:.2f} sec, asdf: {:.2f}, stream:  {:.2f} -> {}%"
+                        .format(time.time()-time_stamp_this_loop, time.time()-t2,
+                                t_stream,
+                                int((time.time() - t2 + t_stream)/(time.time() - time_stamp_this_loop)*100.0)))
+            time_stamp_this_loop = time.time()
         else:
             time.sleep(0.1)
-            # print("had time to sleep here {}, {}".format(card1.nr_of_bytes_available(), bytes_per_transfer))
-
 
 """
 # shutdown (is this optional?)

@@ -63,4 +63,4 @@ class TimeStamps:
 
     def set_starttime_next_segment(self, nr_of_datapoints):
         self._starttime_ns = self._starttime_ns + int(nr_of_datapoints * (self._delta * 10 ** 9))
-        logger.info("time delta between files in ns = {0}".format(int(nr_of_datapoints * (self._delta * 10 ** 9))))
+        # logger.info("time delta between files in ns = {0}".format(int(nr_of_datapoints * (self._delta * 10 ** 9))))

@@ -24,6 +24,7 @@ def acquisition_(param):
     # print("logger level: " + logging.getLevelName(logger.level));
 
     param['Acquisition']['simulation_mode'] = False     # should be False, or no real data is recorded when True!
+    param['Acquisition']['bytes_per_stream_packet'] = 8*1024*1024
     # 32 * 1024 * 1024   # in bytes (amount of data processed per python call)
     param['Acquisition']['bytes_per_transfer'] = 32*1024*1024
     # 128 * 1024 * 1024 # in bytes (computer memory reserved for data)
@@ -33,7 +34,7 @@ def acquisition_(param):
     # amount of generated data for simulation: 0...4
     # 0 = fastest, only zeroes used, will lead to high compression rate -> small files, low load
     # 4 = slow, all channels with sine, sawtooth and random data filled -> "worst cast data"
-    param['Acquisition']['simulation_amount'] = 1
+    param['Acquisition']['simulation_amount'] = 0
     _check_if_hardware_needs_to_be_simulated(param)
 
     hostname = socket.gethostname()
