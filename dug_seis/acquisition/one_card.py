@@ -48,7 +48,7 @@ class Card:
 
         self._pv_buffer = None
         # nr of channels & 16 bit = 2 bytes
-        self._nr_of_datapoints = floor(param['Acquisition']['bytes_per_transfer'] / 16 / 2)
+        # self._nr_of_datapoints = floor(param['Acquisition']['bytes_per_transfer'] / 16 / 2)
 
         input_range_sorted = param['Acquisition']['hardware_settings']['input_range_sorted']
         if card_nr == 0:
@@ -111,10 +111,11 @@ class Card:
         spcm_dwGetParam_i32(self.h_card, regs.SPC_DATA_AVAIL_USER_POS, byref(l_pc_pos))
         return l_pc_pos.value
 
-    def read_data(self):
+    def read_data(self, bytes_per_transfer, bytes_offset):
         # cast to pointer to 16bit integer
-        x = cast(addressof(self._pv_buffer) + self.read_buffer_position(), POINTER(c_int16))
-        np_data = np.ctypeslib.as_array(x, shape=(self._nr_of_datapoints, 16)).T
+        nr_of_datapoints = int(bytes_per_transfer / 16 / 2)
+        x = cast(addressof(self._pv_buffer) + self.read_buffer_position() + bytes_offset, POINTER(c_int16))
+        np_data = np.ctypeslib.as_array(x, shape=(nr_of_datapoints, 16)).T
         return np_data
 
     def data_has_been_read(self):
