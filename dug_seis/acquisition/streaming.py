@@ -369,8 +369,10 @@ class Streamer():
 def create_servers(param):
     sampling_rate = param['Acquisition']['hardware_settings']['sampling_frequency']
     streamers = []
+    if 'streaming_servers' not in param['Acquisition']:
+        return streamers
     for server in param['Acquisition']['streaming_servers']:
-        print(f"server {server}")
+        logger.info(f"Starting server: {server}")
         channels = []
         for ch_id in server['channels']:
             if str(ch_id).isdigit():
