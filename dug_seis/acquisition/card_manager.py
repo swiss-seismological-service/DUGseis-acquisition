@@ -14,6 +14,7 @@
 """
 import time
 import logging
+import copy
 
 from dug_seis.acquisition.one_card import Card
 from dug_seis.acquisition.star_hub import StarHub
@@ -96,6 +97,7 @@ def run(param):
 
     bytes_offset = 0
     t_stream = 0
+    ts_stream = copy.copy(data_to_asdf.time_stamps)
     try:
         while True:
             # polling scheme here, might not be the best?
@@ -105,17 +107,21 @@ def run(param):
             while card1_bytes_available >= bytes_offset + bytes_per_stream_packet\
                     and card2_bytes_available >= bytes_offset + bytes_per_stream_packet:
                 t1 = time.time()
+
                 cards_data = [card1.read_data(bytes_per_stream_packet, bytes_offset),
                               card2.read_data(bytes_per_stream_packet, bytes_offset)]
-                streaming.feed_servers(servers, cards_data, data_to_asdf.time_stamps.starttime_UTCDateTime())
+                ts_stream.set_starttime_next_segment( int(cards_data[0].size / 16) )
+                streaming.feed_servers(servers, cards_data, ts_stream.starttime_UTCDateTime())
                 bytes_offset += bytes_per_stream_packet
+
                 t_stream += time.time()-t1
 
             if card1_bytes_available >= bytes_per_transfer \
                     and card2_bytes_available >= bytes_per_transfer:
 
                 t2 = time.time()
-                data_to_asdf.data_to_asdf([card1.read_data(bytes_per_transfer, 0), card2.read_data(bytes_per_transfer, 0)])
+                data_to_asdf.data_to_asdf([card1.read_data(bytes_per_transfer, 0),
+                                           card2.read_data(bytes_per_transfer, 0)])
                 card1.data_has_been_read()
                 card2.data_has_been_read()
                 bytes_offset -= bytes_per_transfer
