@@ -119,12 +119,14 @@ def run(param):
                 card1.data_has_been_read()
                 card2.data_has_been_read()
                 bytes_offset -= bytes_per_transfer
-                t1 = 0
+
+                now = time.time()
+                t_asdf = now - t2
+                t_loop = now - time_stamp_this_loop
                 logger.info("loop took: {:.2f} sec, asdf: {:.2f}, stream:  {:.2f} -> {}%"
-                            .format(time.time()-time_stamp_this_loop, time.time()-t2,
-                                    t_stream,
-                                    int((time.time() - t2 + t_stream)/(time.time() - time_stamp_this_loop)*100.0)))
-                time_stamp_this_loop = time.time()
+                            .format(t_loop, t_asdf, t_stream, int((t_asdf + t_stream)/t_loop * 100)))
+                t_stream = 0
+                time_stamp_this_loop = now
             else:
                 time.sleep(0.1)
     except KeyboardInterrupt:
@@ -133,7 +135,6 @@ def run(param):
     # shutdown
     for server in servers:
         server.stop()
-
 
     # is this optional?
     #card1.stop_recording()
