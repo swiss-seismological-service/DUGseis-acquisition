@@ -2,6 +2,7 @@ from pathlib import Path
 import pyasdf
 
 asdf_folder = Path('C:/Users/thaag/PycharmProjects/DUGseis-acquisition/raw_waveforms/299')
+asdf_folder = Path('C:/polybox/asdfAqSys/codeTH/raw_waveforms/348')
 asdf_list = list(sorted(asdf_folder.glob('*.h5')))
 
 # dataset

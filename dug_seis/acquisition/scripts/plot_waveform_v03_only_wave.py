@@ -32,7 +32,7 @@ def plot_waveform(dataStream):
         ax1.grid(b=None, which='major', axis='x', color='silver', linestyle='-', linewidth=0.25)
         ax1.set_axisbelow(True)
         ax1.plot(samp_v, dataStream[i].data, linewidth=0.25, marker='o')
-        ax1.set_yticklabels([])
+        # ax1.set_yticklabels([]) # hide y axis numbers
         ax1.set_ylabel('sta:' + dataStream.traces[i].stats.station +
                        ' ch:' + dataStream.traces[i].stats.location, rotation=90, fontsize=12)
 

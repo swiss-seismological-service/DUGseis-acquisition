@@ -94,5 +94,5 @@ class FileHandling:
             # logger.info("no file found creating new file. (probably first run)\n")
             self._check_if_folders_exist_create_if_needed()
             self.create_new_file(time_stamps)
-
+        # logger.info("appending {} x {}".format(len(stream), len(stream[0])))
         self._file_handle.append_waveforms(stream, tag="raw_recording")

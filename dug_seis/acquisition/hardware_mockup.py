@@ -25,7 +25,7 @@ class SimulatedHardware:
         self._ram_buffer_size = param['Acquisition']['hardware_settings']['ram_buffer_size']
         self._sampling_frequency = param['Acquisition']['hardware_settings']['sampling_frequency']
 
-        self._pv_buffer = generate_data_for_pv_buffer(self._ram_buffer_size, param['Acquisition']['simulation_amount'])
+        self._pv_buffer = generate_data_for_pv_buffer(self._ram_buffer_size, param['Acquisition']['simulation_amount'], self._sampling_frequency)
         self._l_pc_pos = 0
         self._timestamp_last_call = time.time()
         # nr of channels & 16 bit = 2 bytes
