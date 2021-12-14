@@ -118,7 +118,7 @@ def run(param):
                 data_to_asdf.data_to_asdf([card1.read_data(bytes_per_transfer, 0), card2.read_data(bytes_per_transfer, 0)])
                 card1.data_has_been_read()
                 card2.data_has_been_read()
-                bytes_offset = 0
+                bytes_offset -= bytes_per_transfer
                 t1 = 0
                 logger.info("loop took: {:.2f} sec, asdf: {:.2f}, stream:  {:.2f} -> {}%"
                             .format(time.time()-time_stamp_this_loop, time.time()-t2,
