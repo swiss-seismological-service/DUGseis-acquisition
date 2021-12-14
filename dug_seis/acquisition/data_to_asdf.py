@@ -40,6 +40,8 @@ class DataToASDF:
             self.error = False
 
         self._data_points_in_this_file = 0
+        # self._data_points_in_this_file = 757125   # leads to 5 datapoints in next file fast (10sec filesize)
+        # self._data_points_in_this_file = 854270     # big check
         self._data_points_since_start = 0
         # calculate when next datapoint needs to be deleted
         _fpga_value_should = 2**32*self._sampling_rate/20e6
@@ -50,6 +52,7 @@ class DataToASDF:
         # self._drop_point_every = 200e3*45 # for DEGUGGING only
         self._drop_next_point_at = self._drop_point_every
         logger.info("one datapoint will be dropped every {} sample".format(self._drop_point_every))
+        self._stream_leftover_data = None
 
         self.time_stamps = TimeStamps(param)
         self.file_handling = FileHandling(param)
@@ -58,7 +61,7 @@ class DataToASDF:
     def set_starttime_now(self):
         self.time_stamps.set_starttime_now()
 
-    def _add_samples_to_file(self, np_data_list, start_sample, end_sample):
+    def _add_samples_to_stream(self, np_data_list, start_sample, end_sample):
         stream = Stream()
         self.stats_handling.set_starttime( self.time_stamps.starttime_UTCDateTime() )
 
@@ -86,21 +89,34 @@ class DataToASDF:
             # logger.info("splitting file")
             data_points_to_file1 = self.file_length_in_samples - self._data_points_in_this_file
 
-        data_points_to_file2 = nr_of_new_datapoints - data_points_to_file1
-        if data_points_to_file1 + data_points_to_file2 != nr_of_new_datapoints:
-            logger.error("error: data_points_to_file1 + data_points_to_file2 != nr_of_new_datapoints")
+        data_points_to_next_file = nr_of_new_datapoints - data_points_to_file1
+        if data_points_to_file1 + data_points_to_next_file != nr_of_new_datapoints:
+            logger.error("error: data_points_to_file1 + data_points_to_next_file != nr_of_new_datapoints")
 
         # logger.info("data_points_to_file1: {}".format(data_points_to_file1))
         if data_points_to_file1 > 0:
-            stream = self._add_samples_to_file(np_data_list, 0, data_points_to_file1)
+            stream = self._add_samples_to_stream(np_data_list, 0, data_points_to_file1)
             # logger.info("start time of this buffer = {0}".format(self.time_stamps.starttime_str()))
+            if self._stream_leftover_data:
+                # print(stream)
+                # print(self._stream_leftover_data)
+                stream = self._stream_leftover_data + stream
+                stream.merge()
+                if len(stream.get_gaps()) != 0:
+                    logger.error(".merge did not work as expected, there are gaps.")
+                    # stream.print_gaps()
+                # logger.info("stream {} x {}".format(len(stream), len(stream[0])))
+                del self._stream_leftover_data
+                self._stream_leftover_data = None
+            else:
+                pass
+                # logger.info("no leftover")
             self.file_handling.append_waveform_to_file(self.time_stamps, stream)
+            self.time_stamps.set_starttime_next_segment(data_points_to_file1)
             del stream
 
-        self.time_stamps.set_starttime_next_segment( data_points_to_file1 )
-
-        if data_points_to_file2 != 0:
-            logger.info("starting the next file with {} datapoints.".format(data_points_to_file2))
+        if data_points_to_next_file != 0:
+            logger.info("starting the next file with {} datapoints.".format(data_points_to_next_file))
             start_sample = data_points_to_file1
             self.file_handling.create_new_file(self.time_stamps)
 
@@ -110,12 +126,9 @@ class DataToASDF:
                 self._drop_next_point_at += self._drop_point_every
                 start_sample += 1
                 self._data_points_since_start -= 1
-                data_points_to_file2 -= 1
+                data_points_to_next_file -= 1
 
+            self._data_points_in_this_file = data_points_to_next_file
+            self._stream_leftover_data = self._add_samples_to_stream(np_data_list, start_sample, nr_of_new_datapoints)
+            self.time_stamps.set_starttime_next_segment(data_points_to_next_file)
 
-            self._data_points_in_this_file = data_points_to_file2
-
-            stream = self._add_samples_to_file(np_data_list, start_sample, nr_of_new_datapoints)
-            self.file_handling.append_waveform_to_file(self.time_stamps, stream)
-            del stream
-            self.time_stamps.set_starttime_next_segment( int(self._data_points_in_this_file ))

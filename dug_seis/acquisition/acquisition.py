@@ -67,7 +67,6 @@ def _check_if_hardware_needs_to_be_simulated(param):
                         ' This setting should never be pushed to Git, the real system does only record simulated'
                         ' data this way. A computer without the acquisition hardware will detect the missing hardware'
                         ' and ask to change to the simulation mode automatically.')
-        input('...')
     else:
         if _check_if_hardware_driver_can_be_loaded():
             logger.info('Hardware driver found, running on real hardware')
