@@ -14,7 +14,6 @@
 """
 
 import logging
-import time
 
 import numpy as np
 import os.path
@@ -22,7 +21,6 @@ import os.path
 import dug_seis.acquisition.hardware_driver.regs as regs
 import dug_seis.acquisition.hardware_driver.spcerr as err
 
-from math import floor
 from ctypes import byref, c_int32, POINTER, c_int16, cast, addressof
 
 if os.path.isfile("c:\\windows\\system32\\spcm_win64.dll") or os.path.isfile("c:\\windows\\system32\\spcm_win32.dll") or os.name == 'posix':
@@ -35,12 +33,14 @@ else:
 
 logger = logging.getLogger('dug-seis')
 
+
 class Card:
 
     def __init__(self, param, card_nr):
 
         # l_notify_size = c_int32(regs.KILO_B(2 * 1024))
         self.l_notify_size = c_int32(param['Acquisition']['bytes_per_transfer'])
+        self.ram_buffer_size = param['Acquisition']['hardware_settings']['ram_buffer_size']
         self.card_nr = card_nr
         self.h_card = None
 
@@ -85,8 +85,8 @@ class Card:
         l_status = c_int32()
         spcm_dwGetParam_i32(self.h_card, regs.SPC_M2STATUS, byref(l_status))
 
-        if regs.M2STAT_EXTRA_OVERRUN >> 0x4 & l_status.value:
-            logger.error("overrun or underrun detected: M2STAT_EXTRA_OVERRUN")
+        if regs.M2STAT_DATA_OVERRUN & l_status.value:
+            logger.error("card {} overrun or underrun detected: M2STAT_DATA_OVERRUN".format(self.card_nr))
         return l_status.value
 
     def trigger_received(self):
@@ -114,7 +114,14 @@ class Card:
     def read_data(self, bytes_per_transfer, bytes_offset):
         # cast to pointer to 16bit integer
         nr_of_datapoints = int(bytes_per_transfer / 16 / 2)
-        x = cast(addressof(self._pv_buffer) + self.read_buffer_position() + bytes_offset, POINTER(c_int16))
+        # logger.info("read_data: {} Mb".format((self.read_buffer_position() + bytes_offset)/1024/1024))
+        if self.read_buffer_position() + bytes_offset >= self.ram_buffer_size:
+            # logger.info("wrap around, bytes_offset % ram_buffer_size: {} Mb"
+            #             .format(bytes_offset % self.ram_buffer_size/1024/1024))
+            offset = (self.read_buffer_position() + bytes_offset) % self.ram_buffer_size
+        else:
+            offset = self.read_buffer_position() + bytes_offset
+        x = cast(addressof(self._pv_buffer) + offset, POINTER(c_int16))
         np_data = np.ctypeslib.as_array(x, shape=(nr_of_datapoints, 16)).T
         return np_data
 

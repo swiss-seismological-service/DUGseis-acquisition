@@ -59,7 +59,7 @@ def init_card(param, card_nr):
 
     sampling_frequency = param['Acquisition']['hardware_settings']['sampling_frequency']
     qw_buffer_size = c_uint64(param['Acquisition']['hardware_settings']['ram_buffer_size'])
-    l_notify_size = c_int32(param['Acquisition']['bytes_per_transfer'])
+    l_notify_size_stream = c_int32(param['Acquisition']['bytes_per_stream_packet'])
     timeout = param['Acquisition']['hardware_settings']['timeout']
     wait_for_trigger = param['Acquisition']['hardware_settings']['wait_for_trigger']
     external_clock = param['Acquisition']['hardware_settings']['external_clock']
@@ -146,7 +146,6 @@ def init_card(param, card_nr):
 #    spcm_dwSetParam_i32(h_card, regs.SPC_CLOCKMODE, regs.SPC_CM_EXTERNAL)
     # spcm_dwSetParam_i32(h_card, regs.SPC_EXTERNALCLOCK, 1)
 
-
     # set sample rate
     spcm_dwSetParam_i32(h_card, regs.SPC_SAMPLERATE, sampling_frequency)
     logger.info("using: {0} sps".format(sampling_frequency))
@@ -188,7 +187,7 @@ def init_card(param, card_nr):
         pv_buffer = create_string_buffer(qw_buffer_size.value)
         logger.info("Using buffer allocated by user program")
 
-    spcm_dwDefTransfer_i64(h_card, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, l_notify_size.value, pv_buffer, c_uint64(0),
+    spcm_dwDefTransfer_i64(h_card, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, l_notify_size_stream.value, pv_buffer, c_uint64(0),
                            qw_buffer_size)
 
     return h_card, pv_buffer

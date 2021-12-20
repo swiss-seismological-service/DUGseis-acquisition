@@ -29,7 +29,8 @@ _install_requires = [
     "click",
     "pyyaml",
     "pyasdf",
-    "matplotlib"
+    "matplotlib",
+    "numpy"
     ]
 
 setup(

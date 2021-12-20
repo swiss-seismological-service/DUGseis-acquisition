@@ -98,11 +98,14 @@ def run(param):
     bytes_offset = 0
     t_stream = 0
     ts_stream = copy.copy(data_to_asdf.time_stamps)
+    # sleep_more = 90     # buffer is around 100 sec ~= (512+128)/16/2/200e3*1024*1024
     try:
         while True:
             # polling scheme here, might not be the best?
             card1_bytes_available = card1.nr_of_bytes_available()
             card2_bytes_available = card2.nr_of_bytes_available()
+            # logger.info("card1_bytes_available: {}, {} Mb".format(card1_bytes_available, card1_bytes_available / 1024 / 1024))
+            # logger.info("card2_bytes_available: {}, {} Mb".format(card2_bytes_available, card2_bytes_available / 1024 / 1024))
 
             while card1_bytes_available >= bytes_offset + bytes_per_stream_packet\
                     and card2_bytes_available >= bytes_offset + bytes_per_stream_packet:
@@ -120,6 +123,10 @@ def run(param):
                     and card2_bytes_available >= bytes_per_transfer:
 
                 t2 = time.time()
+                card1.read_status()     # writes overrun error to logger.error
+                # don't read 2nd card status, it resets the overflow error, the card continues to generate data then
+                # card2.read_status()
+                # logger.info("read_status(): {}".format(card1.read_status()))
                 data_to_asdf.data_to_asdf([card1.read_data(bytes_per_transfer, 0),
                                            card2.read_data(bytes_per_transfer, 0)])
                 card1.data_has_been_read()
@@ -135,17 +142,12 @@ def run(param):
                 time_stamp_this_loop = now
             else:
                 time.sleep(0.1)
+                # logger.info("sleep_more: {} sec".format(sleep_more))
+                # time.sleep(sleep_more)
+                # sleep_more += 2
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt detected, exiting...")
 
     # shutdown
     for server in servers:
         server.stop()
-
-    # is this optional?
-    #card1.stop_recording()
-    #card2.stop_recording()
-
-    #card1.close()
-    #card2.close()
-    #star_hub.close()
