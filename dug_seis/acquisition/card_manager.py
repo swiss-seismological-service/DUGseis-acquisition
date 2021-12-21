@@ -97,7 +97,6 @@ def run(param):
 
     bytes_offset = 0
     t_stream = 0
-    ts_stream = copy.copy(data_to_asdf.time_stamps)
     # sleep_more = 90     # buffer is around 100 sec ~= (512+128)/16/2/200e3*1024*1024
     try:
         while True:
@@ -107,6 +106,7 @@ def run(param):
             # logger.info("card1_bytes_available: {}, {} Mb".format(card1_bytes_available, card1_bytes_available / 1024 / 1024))
             # logger.info("card2_bytes_available: {}, {} Mb".format(card2_bytes_available, card2_bytes_available / 1024 / 1024))
 
+            ts_stream = copy.copy(data_to_asdf.time_stamps)
             while card1_bytes_available >= bytes_offset + bytes_per_stream_packet\
                     and card2_bytes_available >= bytes_offset + bytes_per_stream_packet:
                 t1 = time.time()
