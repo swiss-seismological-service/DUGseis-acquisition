@@ -10,3 +10,4 @@ dug-seis?*.log
 readInMatlab.asv
 matlab/
 venv/
+/docs/build/*

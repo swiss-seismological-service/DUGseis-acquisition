@@ -30,8 +30,9 @@ _install_requires = [
     "pyyaml",
     "pyasdf",
     "matplotlib",
-    "numpy"
-    ]
+    "numpy",
+    "sphinx",
+]
 
 setup(
     name='DUG-Seis',
