@@ -1,3 +1,3 @@
 # DUGSeis-acquisition
 
-[Documentation](https://dugseis.readthedocs.io/)
+[Documentation](https://dugseis-acquisition.readthedocs.io)
