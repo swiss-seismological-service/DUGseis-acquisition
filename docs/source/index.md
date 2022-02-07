@@ -23,6 +23,7 @@ using [Spectrums m2i4741](https://spectrum-instrumentation.com/en/m2i4741) digit
 :glob:
 
 installation_usage
+startup_commands
 error_log
 ```
 
