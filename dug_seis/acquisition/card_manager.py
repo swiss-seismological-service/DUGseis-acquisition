@@ -113,8 +113,8 @@ def run(param):
 
                 cards_data = [card1.read_data(bytes_per_stream_packet, bytes_offset),
                               card2.read_data(bytes_per_stream_packet, bytes_offset)]
-                ts_stream.set_starttime_next_segment( int(cards_data[0].size / 16) )
                 streaming.feed_servers(param, servers, cards_data, ts_stream.starttime_UTCDateTime())
+                ts_stream.set_starttime_next_segment( int(cards_data[0].size / 16) )
                 bytes_offset += bytes_per_stream_packet
 
                 t_stream += time.time()-t1
