@@ -10,4 +10,7 @@ dug-seis?*.log
 readInMatlab.asv
 matlab/
 venv/
-/docs/build/*
+/docs/_build/*
+/docs/.generated/*
+dugseis_acquisition.log
+streamers.log

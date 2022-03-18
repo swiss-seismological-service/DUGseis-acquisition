@@ -6,7 +6,8 @@
 #    GNU Lesser General Public License, Version 3
 #    (https://www.gnu.org/copyleft/lesser.html)
 #
-"""File and directory handling for the asdf file.
+"""
+File and directory handling for the asdf file.
 Auxilliary data is kind of experimental and probably needs to be moved out of here in a later stage.
 """
 
@@ -57,9 +58,9 @@ class FileHandling:
                 os.makedirs(self._last_used_julian_day_folder)
 
     def create_new_file(self, time_stamps):
-        """Creates a new file.
-        With parameters of the DataToAsdf class. Sets the age of the file to time.time()."""
-
+        """
+        Create new ASDF file which complies with the naming conventions.
+        """
         file_name = "{0}__{1}__{2}.h5".format(
             time_stamps.starttime_str(),
             time_stamps.endtime_str(),
@@ -90,6 +91,16 @@ class FileHandling:
                               parameters={})
 
     def append_waveform_to_file(self, time_stamps, stream):
+        """
+        Add stream data to a series of ASDF files.
+        Creates a new ASDF file. Sets the file name with the valid scheme, see Data Requirements.
+        Moves the last file from temp to the julian day folder. Creates a julian day folder if needed.
+        Adds auxiliary data to the file.
+
+        Args:
+            time_stamps: The time to name the ASDF files. And create the julian day folder.
+            stream: The data to be appended to a series of ASDF files.
+        """
         if self._file_handle is None:
             # logger.info("no file found creating new file. (probably first run)\n")
             self._check_if_folders_exist_create_if_needed()

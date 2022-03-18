@@ -61,6 +61,9 @@ class SimulatedHardware:
         return True
 
     def mock_card(self, card):
+        """
+        Mock's an acquisition card. Used when no real hardware could be found.
+        """
         card.init_card = self._simulated_init_card
         card.read_status = MagicMock(return_value=None)
         card.nr_of_bytes_available = self._simulated_nr_of_bytes_available
@@ -70,5 +73,8 @@ class SimulatedHardware:
         card.trigger_received = self._simulated_trigger_received
 
     def mock_starhub(self, hub):
+        """
+        Mock's a star hub. Used when no real hardware could be found.
+        """
         hub.init_star_hub = MagicMock(return_value=None)
         hub.start = MagicMock(return_value=None)

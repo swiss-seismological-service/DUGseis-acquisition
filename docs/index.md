@@ -10,7 +10,7 @@ using [Spectrums m2i4741](https://spectrum-instrumentation.com/en/m2i4741) digit
 
 [Github Repository](https://github.com/swiss-seismological-service/DUGseis-acquisition)
 
-```{image} _static/dug_seis_acquisition_logo.svg
+```{image} static/dug_seis_acquisition_logo.svg
 :alt: DUGSeis Logo
 :width: 50%
 :align: center
@@ -22,9 +22,12 @@ using [Spectrums m2i4741](https://spectrum-instrumentation.com/en/m2i4741) digit
 :maxdepth: 2
 :glob:
 
-installation_usage
-startup_commands
-error_log
+usage
+installation
+development
+data_requirements
+
+.generated/modules
 ```
 
 ## Indices and tables

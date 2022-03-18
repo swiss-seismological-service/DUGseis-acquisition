@@ -30,8 +30,7 @@ _install_requires = [
     "pyyaml",
     "pyasdf",
     "matplotlib",
-    "numpy",
-    "sphinx",
+    "numpy"
 ]
 
 setup(

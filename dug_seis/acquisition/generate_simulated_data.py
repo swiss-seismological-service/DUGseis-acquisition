@@ -17,6 +17,18 @@ from ctypes import create_string_buffer
 logger = logging.getLogger('dug-seis')
 
 def generate_data_for_pv_buffer(size, amount, sampling_frequency):
+    """
+    Generate simulated data in RAM.
+
+    Args:
+            size: The size used in RAM.
+            amount: The complexity of the generated data. 0 = all zeroes (fastest).
+                1 = channel 1 and 17 sine wave 1kHz, 20000 amplitude.
+                2 = (additional) channel 2 and 18 ramp upwards, +1 per time step.
+                3 = (additional) channel 3 and 19 sine wave 32768 amplitude.
+                4 = (additional) all other channels have random data (hard to compress).
+            sampling_frequency: The selected sampling frequency, used to calculate the sine wave.
+    """
     # amount can be 0...5
     pv_buffer = create_string_buffer(size)
     fill_percent = 2  # 100 fills up all buffer

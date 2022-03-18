@@ -1,12 +1,10 @@
-"""
-Acquisition module of DUG-Seis
-
-
 # Copyright (c) 2018 by SCCER-SoE and SED at ETHZ
+#
+# Version 0.0, 23.10.2018, Joseph Doetsch (doetschj)
+#              23.10.2018, Thomas Haag (thaag)
 
-Version 0.0, 23.10.2018, Joseph Doetsch (doetschj)
-             23.10.2018, Thomas Haag (thaag)
-
+"""
+Acquisition module of DUG-Seis.
 """
 
 import logging
@@ -18,6 +16,18 @@ logger = logging.getLogger('dug-seis')
 
 
 def acquisition_(param):
+    """
+    Acquisition entry point.
+    Defines Buffer sizes for: DMA, Stream, and RAM.
+    Checks if this script runs on a computer where the Spectrum cards are installed or if they need to be simulated.
+    Defines how complex simulated data is.
+    Sets the daq_unit name based on the hostname.
+    Start writing to the log file and adds the configuration to it.
+    Runs the card manger.
+
+    Args:
+        param: Parameters which where loaded from dug-seis.yaml when calling "dug-seis acquisition"
+    """
     logger.info('Acquisition script started')
     logger.info('==========================')
     # print("logger name: " + logger.name);

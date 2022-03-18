@@ -41,7 +41,7 @@ class DataToASDF:
 
         self._data_points_in_this_file = 0
         # self._data_points_in_this_file = 757125   # leads to 5 datapoints in next file fast (10sec filesize)
-        # self._data_points_in_this_file = 854270     # big check
+        # self._data_points_in_this_file = 854270   # big check
         self._data_points_since_start = 0
         # calculate when next datapoint needs to be deleted
         _fpga_value_should = 2**32*self._sampling_rate/20e6
@@ -59,6 +59,10 @@ class DataToASDF:
         self.stats_handling = StatsHandling(param)
 
     def set_starttime_now(self):
+        """
+        Sets the current pc time as the acquisition start time.
+        obspy.core.UTCDateTime
+        """
         self.time_stamps.set_starttime_now()
 
     def _add_samples_to_stream(self, np_data_list, start_sample, end_sample):
@@ -78,6 +82,12 @@ class DataToASDF:
         return stream
 
     def data_to_asdf(self, np_data_list):
+        """
+        Writes an array of data to asdf files. Creates new files when needed. Drop's a datapoint when needed.
+
+        Args:
+            np_data_list: the array of data. formatted from the spectrum cards.
+        """
 
         nr_of_new_datapoints = int(np_data_list[0].size / 16)
         self._data_points_since_start += nr_of_new_datapoints

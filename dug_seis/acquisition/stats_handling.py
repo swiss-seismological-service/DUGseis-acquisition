@@ -11,6 +11,7 @@ import logging
 
 logger = logging.getLogger('dug-seis')
 
+
 class StatsHandling:
 
     def __init__(self, param):
@@ -31,5 +32,6 @@ class StatsHandling:
         self.stats['starttime'] = starttime
 
     def set_location(self, card_nr, channel_nr):
+        """Sets the channel number as location."""
         channel_nr_32 = channel_nr + 16 * card_nr
         self.stats['location'] = str(self.station_naming[channel_nr_32]).zfill(2)

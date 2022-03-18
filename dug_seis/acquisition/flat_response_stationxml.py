@@ -30,6 +30,13 @@ def get_flat_response_inventory(
         azimuth: float, dip: float,
         site_name: str = "site",
         source_str: str = "self"):
+    """
+    Example HowTo generate a ObsPy StationXML file.
+
+    ObsPy StationXML:             https://docs.obspy.org/tutorial/code_snippets/stationxml_file_from_scratch.html
+    pyasdf adding StationXML:     http://seismicdata.github.io/pyasdf/tutorial.html#adding-station-information
+    pyasdf reading StationXML:    http://seismicdata.github.io/pyasdf/tutorial.html#reading-waveforms-and-stationxml
+    """
     _inv = Inventory(
         networks=[],
         source=source_str)
