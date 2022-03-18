@@ -15,8 +15,7 @@
 #    (https://www.gnu.org/copyleft/lesser.html)
 #
 """
-- removing a bunch of lines out of one_card.py to make it slimmer
-- not sure if this is a clever idea, i guess we will see
+The initialisation of the acquisition card.
 """
 import logging
 import dug_seis.acquisition.hardware_driver.regs as regs

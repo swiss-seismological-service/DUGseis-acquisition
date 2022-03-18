@@ -65,13 +65,15 @@ class Card:
             logger.error("card_nr needs to be 0 or 1, received:{}".format(self.card_nr))
 
     def print_settings(self):
+        """print selected voltage range."""
         selected_range = c_int32(0)
         spcm_dwGetParam_i32(self.h_card, regs.SPC_AMP0, byref(selected_range))
         logger.info("selectedRange: +- {0:.3f} mV\n".format(selected_range.value))
 
     def wait_for_data(self):
         """Wait for a data package(l_notify_size) to be ready.
-        Timeout after SPC_TIMEOUT, if data in not ready. (defined in one_card_sdt_init.py)"""
+        Timeout after SPC_TIMEOUT, if data in not ready. (defined in one_card_sdt_init.py).
+        param['Acquisition']['hardware_settings']['timeout']"""
 
         dw_error = spcm_dwSetParam_i32(self.h_card, regs.SPC_M2CMD, regs.M2CMD_DATA_WAITDMA)
         if dw_error != err.ERR_OK:
@@ -90,11 +92,13 @@ class Card:
         return l_status.value
 
     def trigger_received(self):
+        """Returns true once the card received the first trigger."""
         if self.read_status() & regs.M2STAT_CARD_TRIGGER:  # The first trigger has been detected.
             return True
         return False
 
     def read_xio(self):
+        """Read the digital IO's."""
         l_data = c_int32()
         spcm_dwGetParam_i32(self.h_card, regs.SPC_XIO_DIGITALIO, byref(l_data))
         return l_data.value
@@ -112,6 +116,12 @@ class Card:
         return l_pc_pos.value
 
     def read_data(self, bytes_per_transfer, bytes_offset):
+        """Read data from the RAM buffer. Interprets a part of the RAM buffer as array.
+
+        Args:
+            bytes_per_transfer: how many bytes that are interpreted.
+            bytes_offset: bytes left out from the start of the buffer.
+        """
         # cast to pointer to 16bit integer
         nr_of_datapoints = int(bytes_per_transfer / 16 / 2)
         # logger.info("read_data: {} Mb".format((self.read_buffer_position() + bytes_offset)/1024/1024))

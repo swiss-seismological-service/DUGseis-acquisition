@@ -28,6 +28,9 @@ logger = logging.getLogger('dug-seis')
 
 
 def run(param):
+    """
+    Main acquisition loop, run's until ctrl + c.
+    """
     bytes_per_transfer = param['Acquisition']['bytes_per_transfer']
     bytes_per_stream_packet = param['Acquisition']['bytes_per_stream_packet']
     simulation_mode = param['Acquisition']['simulation_mode']

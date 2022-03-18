@@ -8,7 +8,7 @@
 #    GNU Lesser General Public License, Version 3
 #    (https://www.gnu.org/copyleft/lesser.html)
 #
-
+"""Command line."""
 
 import click
 import yaml
