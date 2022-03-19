@@ -27,7 +27,6 @@ installation
 development
 data_requirements
 
-.generated/modules
 ```
 
 ## Indices and tables

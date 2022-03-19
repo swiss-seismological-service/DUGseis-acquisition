@@ -7,8 +7,8 @@ import sys
 import sphinx.ext.apidoc
 
 
-SCRIPT_DIR = pathlib.Path(__file__).parent
-MODULE_DIR = pathlib.Path(__file__).parent.parent / "dug_seis"
+SCRIPT_DIR = pathlib.Path(__file__).parent.parent
+MODULE_DIR = pathlib.Path(__file__).parent.parent.parent / "dug_seis"
 
 sys.path.insert(0, str(MODULE_DIR))
 
