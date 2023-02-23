@@ -386,13 +386,13 @@ def create_servers(param):
     return streamers
 
 def feed_servers(param, streamers, cards_data, data_timestamp):
-    station_naming = param['Acquisition']['asdf_settings']['station_naming']
+    reorder_channels = param['Acquisition']['asdf_settings']['reorder_channels']
     for card_nr in range(len(cards_data)):
         card_data = cards_data[card_nr]
         num_samps = int(card_data.size / 16)
         for i in range(16):
             samples = card_data[i, 0:num_samps]
-            ch_id = station_naming[ i + 16 * card_nr ]
+            ch_id = reorder_channels[ i + 16 * card_nr ]
             for streamer in streamers:
                 if ch_id in streamer.channels:
                     streamer.feed_data(ch_id, data_timestamp, samples)

@@ -36,8 +36,8 @@ def plot_simple(asdf_folder, channel_array, starttime_relative_sec, length_sec, 
         else:
             for chan in channel_array:
                 print( str(chan).zfill(2), end=' ' )
-                stream_1 += asdf_1.get_waveforms(network=network_str, station=station_str,
-                                                 location=str(chan).zfill(2), channel="001",
+                stream_1 += asdf_1.get_waveforms(network=chan.split('.')[0], station=chan.split('.')[1],
+                                                 location=chan.split('.')[2], channel=chan.split('.')[3],
                                                  starttime=start_time_first_file + starttime_relative_sec,
                                                  endtime=start_time_first_file + starttime_relative_sec + length_sec,
                                                  tag="raw_recording")

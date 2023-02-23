@@ -10,7 +10,10 @@ Acquisition module of DUG-Seis.
 import logging
 import dug_seis.acquisition.card_manager as card_manager
 import os.path
+import shutil
 import socket
+
+from obspy.core import UTCDateTime
 
 logger = logging.getLogger('dug-seis')
 
@@ -45,6 +48,9 @@ def acquisition_(param):
     # 0 = fastest, only zeroes used, will lead to high compression rate -> small files, low load
     # 4 = slow, all channels with sine, sawtooth and random data filled -> "worst cast data"
     param['Acquisition']['simulation_amount'] = 0
+    param['Acquisition']['asdf_settings']['reorder_channels'] = [1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15, 8, 16,
+                                               17, 25, 18, 26, 19, 27, 20, 28, 21, 29, 22, 30, 23, 31, 24, 32]
+
     _check_if_hardware_needs_to_be_simulated(param)
 
     hostname = socket.gethostname()
@@ -68,6 +74,7 @@ def acquisition_(param):
     logger.info('used configuration values (from .yaml file) :')
     _write_used_param_to_log_recursive(param)
     logger.info('additional information, os.name: {0}, os.getcwd(): {1}'.format(os.name, os.getcwd()))
+    _copy_config_file(param)
     card_manager.run(param)
 
 
@@ -116,6 +123,29 @@ def _check_if_hardware_driver_can_be_loaded():
     return False
 
 
+def _copy_config_file(param):
+    _folder = param['General']['acquisition_folder']
+    if _folder[len(_folder) - 1] != "/":
+        _folder += "/"
+    _folder += 'configs/'
+    _time_str = str(UTCDateTime()).replace(":", "_").replace("-", "_")
+    _time_str = _time_str.split('.')[0]
+    _time_str += '_'
+    _folder_file = _folder + _time_str + 'dug-seis.yaml'
+
+    if not os.path.isdir(_folder):
+        os.makedirs(_folder)
+        logger.info("creating folder: {}".format(_folder))
+    if os.path.isfile('./dug-seis.yaml'):
+        logger.info("copying ./dug-seis.yaml to {}".format(_folder_file))
+        shutil.copyfile('./dug-seis.yaml', _folder_file)
+    elif os.path.isfile('./config/dug-seis.yaml'):
+        logger.info("copying ./config/dug-seis.yaml to {}".format(_folder_file))
+        shutil.copyfile('./config/dug-seis.yaml', _folder_file)
+    else:
+        logger.error("could not find ./dug-seis.yaml or ./config/dug-seis.yaml")
+
+
 def _write_used_param_to_log_recursive(param_dict):
     for key, value in param_dict.items():
         if type(value) == dict:
@@ -128,12 +158,12 @@ def _write_used_param_to_log_recursive(param_dict):
 
 def _sorted_input_ranges(param):
     input_range = param['Acquisition']['hardware_settings']['input_range']
-    station_naming = param['Acquisition']['asdf_settings']['station_naming']
-    multiplex_order = [x - 1 for x in station_naming]
+    reorder_channels = param['Acquisition']['asdf_settings']['reorder_channels']
+    multiplex_order = [x - 1 for x in reorder_channels]
     input_range_sorted = input_range.copy()
     input_range_sorted[:] = [input_range_sorted[i] for i in multiplex_order]
     # ch_nr = 0
-    # for x in station_naming:
+    # for x in reorder_channels:
     #     input_range_sorted[int(x)-1] = (input_range[ch_nr])
     #     # logger.info('x: {}'.format( int(x) ))
     #     ch_nr = ch_nr+1

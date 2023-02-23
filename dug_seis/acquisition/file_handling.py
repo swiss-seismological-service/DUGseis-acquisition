@@ -21,6 +21,7 @@ from dug_seis.acquisition.time_stamps import TimeStamps
 
 logger = logging.getLogger('dug-seis')
 
+
 class FileHandling:
 
     def __init__(self, param):

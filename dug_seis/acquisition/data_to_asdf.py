@@ -73,8 +73,12 @@ class DataToASDF:
         for np_data in np_data_list:
 
             for i in range(16):
-                self.stats_handling.set_location(card_nr, i)
-                stream += Trace(np_data[i, start_sample:end_sample], header=self.stats_handling.get_stats())
+
+                if self.stats_handling.set_sensor_code(card_nr, i):
+                    stream += Trace(np_data[i, start_sample:end_sample], header=self.stats_handling.get_stats())
+                else:
+                    # channel is disabled with 'NOT'
+                    pass
 
             del np_data
             card_nr += 1

@@ -2,15 +2,15 @@ import plot_simple
 import fft_helper
 from pathlib import Path
 
-asdf_folder = Path('C:/Users/thaag/PycharmProjects/DUGseis-acquisition/raw_waveforms/01_Inputrange_change/b_100mV_range/raw_waveforms/306')
-channel_array = [1,6,7]
+asdf_folder = Path('C:/polybox/asdfAqSys/code/DUGseis-acquisition/raw_waveforms/54')
+channel_array = ['8R.F1201..JJD', '8R.F1202..JJD', '8R.F1301..JJD']
 
 # channel_array = range(1, 4)
 
 # print("\nall channels:")
 # plot_simple.plot_simple(asdf_folder, range(1, 33), 0, 300)
 
-x = plot_simple.plot_simple(asdf_folder, [6], 29.99, 0.2)
+x = plot_simple.plot_simple(asdf_folder, ['8R.F1201..JJD'], 9.99, 0.2)
 fft_helper.fft_helper(x)
 
 x.filter("bandpass", freqmin=200.0, freqmax=2000.0)
