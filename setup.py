@@ -30,6 +30,7 @@ _install_requires = [
     "pyyaml",
     "pyasdf",
     "matplotlib",
+    # "numpy==1.21.2",
     "numpy"
 ]
 

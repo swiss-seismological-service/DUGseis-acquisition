@@ -21,15 +21,25 @@ import os.path
 import dug_seis.acquisition.hardware_driver.regs as regs
 import dug_seis.acquisition.hardware_driver.spcerr as err
 
-from ctypes import byref, c_int32, POINTER, c_int16, cast, addressof
+from ctypes import byref, c_int32, POINTER, c_int16, cast, addressof, cdll
 
-if os.path.isfile("c:\\windows\\system32\\spcm_win64.dll") or os.path.isfile("c:\\windows\\system32\\spcm_win32.dll") or os.name == 'posix':
+if os.path.isfile("c:\\windows\\system32\\spcm_win64.dll") or os.path.isfile(
+        "c:\\windows\\system32\\spcm_win32.dll"):
     from dug_seis.acquisition.one_card_std_init import init_card as sdt_init_card
     from dug_seis.acquisition.hardware_driver.pyspcm import spcm_dwSetParam_i32, spcm_dwGetParam_i32, spcm_vClose
 else:
     pass
     # logging at import messes with the later logging settings, no logging needed here
     # logger.warning('one_card.py: problems loading the hardware driver. simulation still available.')
+
+if os.name == 'posix':
+    try:
+        spcmDll = cdll.LoadLibrary("libspcm_linux.so")
+        from dug_seis.acquisition.one_card_std_init import init_card as sdt_init_card
+        from dug_seis.acquisition.hardware_driver.pyspcm import spcm_dwSetParam_i32, spcm_dwGetParam_i32, spcm_vClose
+    except OSError as exception:
+        print("linux card driver could not be loaded.")
+        print(exception)
 
 logger = logging.getLogger('dug-seis')
 
