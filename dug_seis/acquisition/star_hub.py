@@ -37,7 +37,8 @@ if os.name == 'posix':
     try:
         spcmDll = cdll.LoadLibrary("libspcm_linux.so")
         from dug_seis.acquisition.one_card_std_init import init_card as sdt_init_card
-        from dug_seis.acquisition.hardware_driver.pyspcm import spcm_dwSetParam_i32, spcm_dwGetParam_i32, spcm_vClose
+        from dug_seis.acquisition.hardware_driver.pyspcm import spcm_hOpen, spcm_dwSetParam_i32, spcm_dwGetParam_i32
+        from dug_seis.acquisition.hardware_driver.pyspcm import spcm_dwGetErrorInfo_i32, spcm_vClose
     except OSError as exception:
         print("linux card driver could not be loaded.")
         print(exception)
