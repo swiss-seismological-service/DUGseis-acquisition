@@ -65,24 +65,33 @@ class StarHub:
 
         # setup star-hub
         nr_of_cards = len(card_list)
-        spcm_dwSetParam_i32(self.h_sync, regs.SPC_SYNC_ENABLEMASK, (1 << nr_of_cards) - 1)
+        dw_error = spcm_dwSetParam_i32(self.h_sync, regs.SPC_SYNC_ENABLEMASK, (1 << nr_of_cards) - 1)
+        if dw_error != 0:  # != ERR_OK
+            sz_error_text_buffer = create_string_buffer(regs.ERRORTEXTLEN)
+            spcm_dwGetErrorInfo_i32(self.h_sync, None, None, sz_error_text_buffer)
+            logger.error("Setting setting synchronisation mask to star hub failed. sz_error_text_buffer.value: {0}".format(sz_error_text_buffer.value))
 
         # find star-hub carrier card and set it as clock master
         i = 0
         for one_card in card_list:
             l_features = c_int32(0)
             spcm_dwGetParam_i32(one_card.h_card, regs.SPC_PCIFEATURES, byref(l_features))
+            print(l_features)
 
             l_serial_number = c_int32(0)
             spcm_dwGetParam_i32(one_card.h_card, regs.SPC_PCISERIALNO, byref(l_serial_number))
-            # print("card nr i: {0:d}, serial:{1}\n".format(i, l_serial_number.value))
+            print("card nr i: {0:d}, serial:{1}\n".format(i, l_serial_number.value))
 
             if l_features.value & (regs.SPCM_FEAT_STARHUB5 | regs.SPCM_FEAT_STARHUB16):
                 logger.info("Star hub found on card nr:{}, serial:{}".format(i, l_serial_number.value))
                 break
             i += 1
 
-        spcm_dwSetParam_i32(self.h_sync, regs.SPC_SYNC_CLKMASK, (1 << i))
+        dw_error = spcm_dwSetParam_i32(self.h_sync, regs.SPC_SYNC_CLKMASK, (1 << i))
+        if dw_error != 0:  # != ERR_OK
+            sz_error_text_buffer = create_string_buffer(regs.ERRORTEXTLEN)
+            spcm_dwGetErrorInfo_i32(self.h_sync, None, None, sz_error_text_buffer)
+            logger.error("Setting setting clock master to star hub failed. sz_error_text_buffer.value: {0}".format(sz_error_text_buffer.value))
 
     def start(self):
         """Start all cards using the star-hub handle."""
@@ -91,7 +100,7 @@ class StarHub:
         if dw_error != 0:  # != ERR_OK
             sz_error_text_buffer = create_string_buffer(regs.ERRORTEXTLEN)
             spcm_dwGetErrorInfo_i32(self.h_sync, None, None, sz_error_text_buffer)
-            logger.error("sz_error_text_buffer.value: {0}".format(sz_error_text_buffer.value))
+            logger.error("Start of starhub failed. sz_error_text_buffer.value: {0}".format(sz_error_text_buffer.value))
             return -1
 
     def close(self):
