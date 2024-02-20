@@ -62,12 +62,16 @@ def acquisition_(param):
         param['General']['stats']['daq_unit'] = '03'.zfill(2)
     elif hostname == 'continuous-04-bedretto':
         param['General']['stats']['daq_unit'] = '04'.zfill(2)
+    elif hostname == 'continuous-05-bedretto':
+        param['General']['stats']['daq_unit'] = '05'.zfill(2)
     else:
         if param['Acquisition']['simulation_mode'] == True:
             param['General']['stats']['daq_unit'] = '99'.zfill(2)
             logger.info('simulation on host: {}, setting daq_unit to: {}'.format(hostname, param['General']['stats']['daq_unit']))
         else:
-            logger.info('host name not known')
+            # Mt Terri will probably run here
+            param['General']['stats']['daq_unit'] = '98'.zfill(2)
+            logger.error('host name not known')
 
     param['Acquisition']['hardware_settings']['input_range_sorted'] = _sorted_input_ranges(param)
 
