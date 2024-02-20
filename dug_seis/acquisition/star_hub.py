@@ -45,6 +45,7 @@ if os.name == 'posix':
 
 logger = logging.getLogger('dug-seis')
 
+
 class StarHub:
     def __init__(self):
 
@@ -57,11 +58,24 @@ class StarHub:
         # open handle for star-hub
         self.h_sync = spcm_hOpen(create_string_buffer(b'sync0'))
 
-        logger.debug("star-hub handler:{0}".format(self.h_sync))
+        logger.info("star-hub handler:{0}".format(self.h_sync))
 
         if self.h_sync is None:
             logger.error("Could not open star-hub...")
             return -1
+
+        # check sync count
+        l_sync_count = c_int32(0)
+        spcm_dwGetParam_i32(self.h_sync, regs.SPC_SYNC_READ_CABLECON0, byref(l_sync_count))
+        logger.info("SPC_SYNC_READ_CABLECON0: {}.".format(l_sync_count.value))
+        spcm_dwGetParam_i32(self.h_sync, regs.SPC_SYNC_READ_CABLECON1, byref(l_sync_count))
+        logger.info("SPC_SYNC_READ_CABLECON1: {}.".format(l_sync_count.value))
+        spcm_dwGetParam_i32(self.h_sync, regs.SPC_SYNC_READ_CARDIDX0, byref(l_sync_count))
+        logger.info("SPC_SYNC_READ_CARDIDX0: {}.".format(l_sync_count.value))
+        spcm_dwGetParam_i32(self.h_sync, regs.SPC_SYNC_READ_NUMCONNECTORS, byref(l_sync_count))
+        logger.info("SPC_SYNC_READ_NUMCONNECTORS: {}.".format(l_sync_count.value))
+        spcm_dwGetParam_i32(self.h_sync, regs.SPC_SYNC_READ_SYNCCOUNT, byref(l_sync_count))
+        logger.info("SPC_SYNC_READ_SYNCCOUNT: {}.".format(l_sync_count.value))
 
         # setup star-hub
         nr_of_cards = len(card_list)
@@ -76,11 +90,11 @@ class StarHub:
         for one_card in card_list:
             l_features = c_int32(0)
             spcm_dwGetParam_i32(one_card.h_card, regs.SPC_PCIFEATURES, byref(l_features))
-            print(l_features)
+            logger.info("features of card {}: {}".format(i, l_features))
 
             l_serial_number = c_int32(0)
             spcm_dwGetParam_i32(one_card.h_card, regs.SPC_PCISERIALNO, byref(l_serial_number))
-            print("card nr i: {0:d}, serial:{1}\n".format(i, l_serial_number.value))
+            logger.info("checking card nr {0:d} for star hub. card serial:{1}\n".format(i, l_serial_number.value))
 
             if l_features.value & (regs.SPCM_FEAT_STARHUB5 | regs.SPCM_FEAT_STARHUB16):
                 logger.info("Star hub found on card nr:{}, serial:{}".format(i, l_serial_number.value))

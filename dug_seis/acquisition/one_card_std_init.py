@@ -107,9 +107,9 @@ def init_card(param, card_nr):
     spcm_dwSetParam_i32(h_card, regs.SPC_TIMEOUT,        timeout)
 
     # xio setup
-    if card_nr == 1:
-        spcm_dwSetParam_i32(h_card, regs.SPC_XIO_DIRECTION, regs.XD_CH0_INPUT | regs.XD_CH2_INPUT)
-        spcm_dwSetParam_i32(h_card, regs.SPC_XIO_DIGITALIO, 0x00)
+    # if card_nr == 1:
+    #    spcm_dwSetParam_i32(h_card, regs.SPC_XIO_DIRECTION, regs.XD_CH0_INPUT | regs.XD_CH2_INPUT)
+    #    spcm_dwSetParam_i32(h_card, regs.SPC_XIO_DIGITALIO, 0x00)
 
     # trigger set to software, card will trigger immediately after start
     # spcm_dwSetParam_i32(h_card, regs.SPC_TRIG_ORMASK,    regs.SPC_TMASK_SOFTWARE)
