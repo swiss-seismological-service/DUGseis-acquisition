@@ -28,7 +28,7 @@ import math
 from random import randrange
 from logging.handlers import RotatingFileHandler
 
-logger = logging.getLogger('dug-seis')
+logger = logging.getLogger("dug-seis")
 
 
 class Data:
@@ -43,7 +43,7 @@ class Client:
     def __init__(self, reader, writer):
         self.reader = reader
         self.writer = writer
-        self.peername = writer.get_extra_info('peername')
+        self.peername = writer.get_extra_info("peername")
         self.channel_ids = []
         self.data_available = asyncio.Event()
         self.data = []
@@ -53,8 +53,8 @@ class Client:
         return line.decode()[:-1]
 
     async def writeline(self, line):
-        self.writer.write((line + '\n').encode(encoding='UTF-8',
-                                               errors='strict'))
+        self.writer.write((line + "\n").encode(encoding="UTF-8",
+                                               errors="strict"))
         await self.writer.drain()
 
     async def close_connection(self):
@@ -71,6 +71,35 @@ class Client:
             self.data_available.set()
 
     async def handle_connection(self):
+        reading_task = asyncio.create_task(self.handle_read_connection())
+        writing_task = asyncio.create_task(self.handle_write_connection())
+        # Loop forever or until the peer close the connection
+        done, pending = await asyncio.wait([reading_task, writing_task],
+                                           return_when=asyncio.FIRST_COMPLETED)
+        for task in pending:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                logger.error(f"Unexpected Exception: {e}")
+
+    async def handle_read_connection(self):
+        if not self.channel_ids:
+            return
+        #
+        # The protocol doesn't allow the peer to send data. So we monitor
+        # this side of the connection to detect a possible socket closed
+        # Something that we cannot monitor on the write side of the connection
+        # If we don't do this and there is no data to be sent to the peer
+        # we will never notice a closed connection initiated by the peer
+        #
+        data = await self.reader.read(1)
+        if data:
+            logger.error(f"Received unexpected data from peer {self.peername!r}")
+
+    async def handle_write_connection(self):
         if not self.channel_ids:
             return
         while True:
@@ -84,40 +113,40 @@ class Client:
                 #
                 self.writer.write(
                     data.time.year.to_bytes(length=2,
-                                            byteorder='big',
+                                            byteorder="big",
                                             signed=False))
                 self.writer.write(data.time.timetuple().tm_yday.to_bytes(
-                    length=2, byteorder='big', signed=False))
+                    length=2, byteorder="big", signed=False))
                 self.writer.write(
                     data.time.hour.to_bytes(length=1,
-                                            byteorder='big',
+                                            byteorder="big",
                                             signed=False))
                 self.writer.write(
                     data.time.minute.to_bytes(length=1,
-                                              byteorder='big',
+                                              byteorder="big",
                                               signed=False))
                 self.writer.write(
                     data.time.second.to_bytes(length=1,
-                                              byteorder='big',
+                                              byteorder="big",
                                               signed=False))
                 self.writer.write(
                     data.time.microsecond.to_bytes(length=4,
-                                                   byteorder='big',
+                                                   byteorder="big",
                                                    signed=False))
                 self.writer.write(
                     data.channel_id.to_bytes(length=4,
-                                             byteorder='big',
+                                             byteorder="big",
                                              signed=False))
                 self.writer.write(
                     data.num_samples.to_bytes(length=4,
-                                              byteorder='big',
+                                              byteorder="big",
                                               signed=False))
 
                 # logger.debug(f"Sending {data.num_samples} samples from channel "
-                #        "{data.channel_id} (year {data.time.year} day "
-                #        "{data.time.timetuple().tm_yday} hour "
-                #        "{data.time.hour} min {data.time.minute} sec "
-                #        "{data.time.second} usec {data.time.microsecond})")
+                #        f"{data.channel_id} (year {data.time.year} day "
+                #        f"{data.time.timetuple().tm_yday} hour "
+                #        f"{data.time.hour} min {data.time.minute} sec "
+                #        f"{data.time.second} usec {data.time.microsecond})")
 
                 #
                 # Send samples
@@ -128,11 +157,11 @@ class Client:
 
 
 class Channel:
-    def __init__(self, id, samprate, endianness, sampsize):
+    def __init__(self, id, samprate, endianness, samptype):
         self.id = id
-        self.samprate = samprate  # samples per second
-        self.endianness = endianness  # big or little
-        self.sampsize = sampsize  # bytes per sample
+        self.samprate   = samprate   # samples per second
+        self.endianness = endianness # "big" or "little"
+        self.samptype   = samptype   # "int8", "int16", "int32", "float32", "float64"
 
 
 class Server:
@@ -204,7 +233,7 @@ class Server:
                                             port=self.port,
                                             backlog=self.backlog,
                                             start_serving=False)
-        addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
+        addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
         logger.info(
             f"Server started on {addrs}, serving channels {[c for c in self.channels ]}"
         )
@@ -240,10 +269,10 @@ class Server:
 
     async def client_handshake(self, client):
         line = await client.readline()
-        if line != "RAW 1.0":
+        if line != "RAW 1.1":
             logger.error(f"Received {line}")
             return False
-        await client.writeline("RAW 1.0")
+        await client.writeline("RAW 1.1")
         while True:
             line = await client.readline()
 
@@ -265,8 +294,7 @@ class Server:
                 await client.writeline("SAMPLE ENDIANNESS")
                 await client.writeline(self.channels[channel_id].endianness)
                 await client.writeline("SAMPLE TYPE")
-                await client.writeline(
-                    "int%d" % (self.channels[channel_id].sampsize * 8))
+                await client.writeline(self.channels[channel_id].samptype)
 
             elif line == "START":
                 if not client.channel_ids:
@@ -284,20 +312,30 @@ class Server:
 
 
 def _start_asyncio_server(channels, data_conn, host, port, backlog):
-
+    #
+    # Set up a file logger for all the spawned servers
+    #
     global logger
-    logger = logging.getLogger("streamer")
+    logger = logging.getLogger("raw_server")
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter(
-        '[%(asctime)s] %(levelname)s [pid %(process)d %(pathname)s:%(lineno)d] - %(message)s', datefmt="%d.%m.%Y %H:%M:%S")
-    hdlr = RotatingFileHandler('streamers.log')  # logger.StreamHandler()
+        "[%(asctime)s] %(levelname)s [pid %(process)d - %(message)s",
+        datefmt="%d.%m.%Y %H:%M:%S")
+    # logger.StreamHandler() for debugging
+    hdlr = RotatingFileHandler("streamers.log")
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
-
+    #
+    # Avoid being overwhelmed by asyncio logs -> set to WARNING
+    #
     logging.getLogger("asyncio").setLevel(logging.WARNING)
-
-    signal.signal(signal.SIGINT, signal.SIG_IGN) # do not crash at ctrl-c
-
+    #
+    # do not crash at ctrl-c
+    #
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    #
+    # Spawn the server
+    #
     server = Server(channels, data_conn, host, port, backlog)
     asyncio.run(server.run())
 
@@ -305,6 +343,7 @@ def _start_asyncio_server(channels, data_conn, host, port, backlog):
 class Streamer():
     def __init__(self, channels, host="127.0.0.1", port=65535):
         self.channels = {c.id: c for c in channels}
+        self.ch_dtypes = {c.id: self.numpy_dtype(c) for c in channels}
         self.host = host
         self.port = port
         self.data_conn = None
@@ -312,6 +351,11 @@ class Streamer():
         self.last_restart = None
 
     def start(self):
+        logger.info(f"Spawning server (binds to {self.host} port {self.port})")
+        logger.info("Channels:")
+        for ch in self.channels.values():
+            logger.info(
+                f" id {ch.id} freq {ch.samprate} data type {ch.samptype} endianness {ch.endianness}")
         read_conn, write_conn = multiprocessing.Pipe(duplex=False)
         server_process = multiprocessing.Process(target=_start_asyncio_server,
                                                  args=(self.channels,
@@ -324,11 +368,19 @@ class Streamer():
         self.server_process.start()
         self.last_start = datetime.datetime.utcnow()
 
+    def numpy_dtype(self, ch):
+        endianness = ">" if ch.endianness == "big" else "<"
+        fmt_map = {"int8": "i1", "int16": "i2",
+                   "int32": "i4", "float32": "f4", "float64": "f8"}
+        fmt = fmt_map[ch.samptype]
+        return f"{endianness}{fmt}"
+
     def feed_data(self, channel_id, samptime, samples):
         if channel_id not in self.channels:
             logger.warning(f"Channel id {channel_id} not configured")
             return
-        data = Data(channel_id, samptime, samples.tobytes(), samples.size)
+        final_samples = np.ascontiguousarray(samples, dtype=self.ch_dtypes[channel_id])
+        data = Data(channel_id, samptime, final_samples.tobytes(), final_samples.size)
         try:
             self.data_conn.send(data)
         except Exception as e:
@@ -367,26 +419,26 @@ class Streamer():
         self.server_process = None
 
 def create_servers(param):
-    sampling_rate = param['Acquisition']['hardware_settings']['sampling_frequency']
+    sampling_rate = param["Acquisition"]["hardware_settings"]["sampling_frequency"]
     streamers = []
-    if 'streaming_servers' not in param['Acquisition']:
+    if "streaming_servers" not in param["Acquisition"]:
         return streamers
-    for server in param['Acquisition']['streaming_servers']:
+    for server in param["Acquisition"]["streaming_servers"]:
         logger.info(f"Starting server: {server}")
         channels = []
-        for ch_id in server['channels']:
+        for ch_id in server["channels"]:
             if str(ch_id).isdigit():
-                channels.append(Channel(int(ch_id), sampling_rate, sys.byteorder, 2))
+                channels.append(Channel(int(ch_id), sampling_rate, sys.byteorder, "int16")))
             else:
-                a, b = ch_id.split('-')
+                a, b = ch_id.split("-")
                 for ch_id in range(int(a), int(b) + 1):
-                    channels.append(Channel(ch_id, sampling_rate, sys.byteorder, 2))
+                    channels.append(Channel(ch_id, sampling_rate, sys.byteorder, "int16")))
         streamer = Streamer(channels, host=server['host'], port=server['port'])
         streamers.append(streamer)
     return streamers
 
 def feed_servers(param, streamers, cards_data, data_timestamp):
-    reorder_channels = param['Acquisition']['asdf_settings']['reorder_channels']
+    reorder_channels = param["Acquisition"]["asdf_settings"]["reorder_channels"]
     for card_nr in range(len(cards_data)):
         card_data = cards_data[card_nr]
         num_samps = int(card_data.size / 16)
@@ -399,16 +451,22 @@ def feed_servers(param, streamers, cards_data, data_timestamp):
 
 if __name__ == "__main__":
     #
-    # Test with 3 streamer servers. The channels dicts contain
-    # 'key:value' items as 'channed_id:sample_rate'
+    # Test with 3 streamer servers
     #
-    channels1 = [Channel(i, 100, 'big', 2) for i in range(1, 5)]
-    channels2 = [Channel(i, 4000, 'little', 1) for i in range(5, 10)]
-    channels3 = [Channel(i, 200000, sys.byteorder, 4) for i in range(10, 15)]
+    channels = [Channel(1, 2000, sys.byteorder, "int8"),
+                Channel(2,   75, "big",    "int16"),
+                Channel(3,   40, "little", "int16"),
+                Channel(4,   45, "big",    "int32"),
+                Channel(5,   80, "little", "int32"),
+                Channel(6,   75, "big",    "float32"),
+                Channel(7,  120, "little", "float32"),
+                Channel(8,  165, "big",    "float64"),
+                Channel(9,   82, "little", "float64")
+    ]
     streamers = [
-        Streamer(channels1, host="127.0.0.1", port=65535),
-        Streamer(channels2, host="127.0.0.1", port=65534),
-        Streamer(channels3, host="127.0.0.1", port=65533),
+        Streamer(channels, host="127.0.0.1", port=65535),
+        Streamer(channels, host="127.0.0.1", port=65534),
+        Streamer(channels, host="127.0.0.1", port=65533),
     ]
     #
     # start the servers
@@ -420,14 +478,15 @@ if __name__ == "__main__":
     # simulate data
     #
     duration = datetime.timedelta(seconds=300)
-    start = datetime.datetime.utcnow()
-    next_samples = start
+    start_time = datetime.datetime.utcnow()
+    next_samples_time = start_time
 
-    while next_samples - start < duration:
+    logger.info("Starting streaming...")
+    while next_samples_time - start_time < duration:
 
-        next_samples += datetime.timedelta(seconds=1)
+        next_samples_time += datetime.timedelta(seconds=1)
         now = datetime.datetime.utcnow()
-        sleep_time = (next_samples - now).total_seconds()
+        sleep_time = (next_samples_time - now).total_seconds()
 
         if sleep_time > 0:
             time.sleep(sleep_time)
@@ -440,18 +499,12 @@ if __name__ == "__main__":
                 num_samples = channel.samprate
                 samples = []
                 for i in range(num_samples):
-                    s = int(math.sin(i * math.pi * 2. / num_samples) * 60)
+                    s = int(math.sin(math.pi * 2. * i / num_samples) * 63)
                     if simulate_pick:
                         s *= 2
                     samples.append(s)
 
-                streamer.feed_data(
-                    channel.id, next_samples,
-                    np.ascontiguousarray(
-                        samples,
-                        dtype='%si%d' %
-                        ('>' if channel.endianness == 'big' else '<',
-                         channel.sampsize)))
+                streamer.feed_data(channel.id, next_samples_time, samples)
     #
     # stop the servers
     #
