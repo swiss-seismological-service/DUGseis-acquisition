@@ -428,12 +428,12 @@ def create_servers(param):
         channels = []
         for ch_id in server["channels"]:
             if str(ch_id).isdigit():
-                channels.append(Channel(int(ch_id), sampling_rate, sys.byteorder, "int16")))
+                channels.append(Channel(int(ch_id), sampling_rate, sys.byteorder, "int16"))
             else:
                 a, b = ch_id.split("-")
                 for ch_id in range(int(a), int(b) + 1):
-                    channels.append(Channel(ch_id, sampling_rate, sys.byteorder, "int16")))
-        streamer = Streamer(channels, host=server['host'], port=server['port'])
+                    channels.append(Channel(ch_id, sampling_rate, sys.byteorder, "int16"))
+        streamer = Streamer(channels, host=server["bind_to"], port=server["port"])
         streamers.append(streamer)
     return streamers
 

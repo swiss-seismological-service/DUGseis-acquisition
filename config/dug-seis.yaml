@@ -40,6 +40,6 @@ Acquisition:
     file_length_sec           : 10.0
 
   streaming_servers:
-    -   host                  : "" # emtpy means all interfaces/ip addresses
+    -   bind_to               : "" # emtpy means all interfaces/ip addresses
         port                  : 65535
         channels              : [1-32]
