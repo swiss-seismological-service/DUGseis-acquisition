@@ -42,6 +42,7 @@ class DataToASDF:
         self._data_points_in_this_file = 0
         # self._data_points_in_this_file = 757125   # leads to 5 datapoints in next file fast (10sec filesize)
         # self._data_points_in_this_file = 854270   # big check
+        self._data_points_droppped = 0
         self._data_points_since_start = 0
         # calculate when next datapoint needs to be deleted
         _fpga_value_should = 2**32*self._sampling_rate/20e6
@@ -98,18 +99,18 @@ class DataToASDF:
         if self.file_length_in_samples - self._data_points_in_this_file >= nr_of_new_datapoints:
             # logger.info("data fits in file")
             self._data_points_in_this_file += nr_of_new_datapoints
-            data_points_to_file1 = nr_of_new_datapoints
+            data_points_to_this_file = nr_of_new_datapoints
         else:
             # logger.info("splitting file")
-            data_points_to_file1 = self.file_length_in_samples - self._data_points_in_this_file
+            data_points_to_this_file = self.file_length_in_samples - self._data_points_in_this_file
 
-        data_points_to_next_file = nr_of_new_datapoints - data_points_to_file1
-        if data_points_to_file1 + data_points_to_next_file != nr_of_new_datapoints:
-            logger.error("error: data_points_to_file1 + data_points_to_next_file != nr_of_new_datapoints")
+        data_points_to_next_file = nr_of_new_datapoints - data_points_to_this_file
+        if data_points_to_this_file + data_points_to_next_file != nr_of_new_datapoints:
+            logger.error("error: data_points_to_this_file + data_points_to_next_file != nr_of_new_datapoints")
 
-        # logger.info("data_points_to_file1: {}".format(data_points_to_file1))
-        if data_points_to_file1 > 0:
-            stream = self._add_samples_to_stream(np_data_list, 0, data_points_to_file1)
+        # logger.info("data_points_to_this_file: {}".format(data_points_to_this_file))
+        if data_points_to_this_file > 0:
+            stream = self._add_samples_to_stream(np_data_list, 0, data_points_to_this_file)
             # logger.info("start time of this buffer = {0}".format(self.time_stamps.starttime_str()))
             if self._stream_leftover_data:
                 # print(stream)
@@ -126,21 +127,23 @@ class DataToASDF:
                 pass
                 # logger.info("no leftover")
             self.file_handling.append_waveform_to_file(self.time_stamps, stream)
-            self.time_stamps.set_starttime_next_segment(data_points_to_file1)
+            self.time_stamps.set_starttime_next_segment(data_points_to_this_file)
             del stream
 
         if data_points_to_next_file != 0:
             logger.info("starting the next file with {} datapoints.".format(data_points_to_next_file))
-            start_sample = data_points_to_file1
+            start_sample = data_points_to_this_file
             self.file_handling.create_new_file(self.time_stamps)
 
             # drop one sample if needed, its the first sample of the new file
             if self._data_points_since_start > self._drop_next_point_at:
-                logger.info("dropped one data point nr: {}".format(self._data_points_since_start))
+                self._data_points_droppped += 1
                 self._drop_next_point_at += self._drop_point_every
                 start_sample += 1
                 self._data_points_since_start -= 1
                 data_points_to_next_file -= 1
+                logger.info("dropped one sample: total samples {} dropped {}".format(
+                    self._data_points_since_start, self._data_points_droppped) )
 
             self._data_points_in_this_file = data_points_to_next_file
             self._stream_leftover_data = self._add_samples_to_stream(np_data_list, start_sample, nr_of_new_datapoints)
