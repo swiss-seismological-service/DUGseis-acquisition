@@ -26,6 +26,7 @@ from dug_seis.acquisition.acquisition import acquisition_ as acquisition_functio
 logging.getLogger('requests').setLevel(logging.ERROR)
 logging.getLogger('urllib3').setLevel(logging.ERROR)
 
+CONFIG_VERSION = 3
 
 @click.group()
 @click.option('-v', '--verbose', is_flag=True, help='Enables verbose mode')
@@ -74,7 +75,10 @@ def cli(ctx, cfg, verbose, mode, log):
         try:
             param = yaml.load(f, Loader=yaml.FullLoader)
         except IOError:
-            logger.error('could not read parameter file at {cfg_path}')
+            logger.error(f'could not read parameter file at {cfg_path}')
+            exit(-1)
+        if param['Version'] != CONFIG_VERSION:
+            logger.error(f'Configuration Version is {param["Version"]} but it must be {CONFIG_VERSION}')
             exit(-1)
     param['General']['mode'] = mode
     ctx.obj = {
