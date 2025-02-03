@@ -131,7 +131,7 @@ class DataToASDF:
             del stream
 
         if data_points_to_next_file != 0:
-            logger.info("starting the next file with {} datapoints.".format(data_points_to_next_file))
+            # logger.info("starting the next file with {} datapoints.".format(data_points_to_next_file))
             start_sample = data_points_to_this_file
             self.file_handling.create_new_file(self.time_stamps)
 

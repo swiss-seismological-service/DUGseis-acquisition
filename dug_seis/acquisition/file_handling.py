@@ -67,7 +67,7 @@ class FileHandling:
             time_stamps.endtime_str(),
             self.station.zfill(2))
         folder_file_name = "{0}{1}".format(self.folder_tmp, file_name)
-        logger.info("create_new_file with folder_file_name = {0}".format(folder_file_name))
+        logger.info("create_new_file {0}".format(folder_file_name))
 
         # logger.info("self.compression = {}, type = {}".format(self.compression, type(self.compression)))
         if self.compression == 'None':

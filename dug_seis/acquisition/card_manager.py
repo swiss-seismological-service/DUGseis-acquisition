@@ -16,6 +16,8 @@ import time
 import logging
 import copy
 
+from obspy.core import UTCDateTime
+
 from dug_seis.acquisition.one_card import Card
 from dug_seis.acquisition.star_hub import StarHub
 from dug_seis.acquisition.data_to_asdf import DataToASDF
@@ -89,7 +91,7 @@ def run(param):
     card1.read_status()
     card2.read_status()
 
-    time_stamp_this_loop = time.time()
+    time_stamp_this_loop = time.perf_counter()
 
     logger.info("Setup complete, waiting for Trigger...")
     while not card1.trigger_received():
@@ -118,7 +120,7 @@ def run(param):
             #
             while (card1_bytes_available >= bytes_streamed + bytes_per_stream_packet and
                    card2_bytes_available >= bytes_streamed + bytes_per_stream_packet):
-                _tref = time.time()
+                _tref = time.perf_counter()
 
                 cards_data = [card1.read_data(bytes_per_stream_packet, bytes_streamed),
                               card2.read_data(bytes_per_stream_packet, bytes_streamed)]
@@ -126,7 +128,7 @@ def run(param):
                 stream_ts.set_starttime_next_segment( int(cards_data[0].size / 16) )
                 bytes_streamed += bytes_per_stream_packet
 
-                t_stream += time.time()-_tref # elapsed time
+                t_stream += time.perf_counter()-_tref # elapsed time
 
             #
             # handle file generation: create files when enough data is available
@@ -134,7 +136,13 @@ def run(param):
             if (card1_bytes_available >= bytes_per_transfer and
                 card2_bytes_available >= bytes_per_transfer):
 
-                _tref = time.time()
+                #
+                # Log system vs data time
+                #
+                logger.info("Data time {} sys/data time difference: {} sec".format(
+                    stream_ts.starttime_UTCDateTime(), UTCDateTime()-stream_ts.starttime_UTCDateTime()))
+
+                _tref = time.perf_counter()
                 card1.read_status()     # writes overrun error to logger.error
                 # don't read 2nd card status, it resets the overflow error, the card continues to generate data then
                 # card2.read_status()
@@ -156,10 +164,10 @@ def run(param):
                         stream_ts = copy.copy(data_to_asdf.time_stamps) # align timestamps with asdf
                         logger.info("Aligned streaming timestamps with asdf files")
 
-                now = time.time()
+                now = time.perf_counter()
                 t_asdf = now - _tref
                 t_loop = now - time_stamp_this_loop
-                logger.info("loop took: {:.2f} sec, asdf: {:.2f}, stream:  {:.2f} -> {}%"
+                logger.info("Loop took: {:.2f} sec (asdf {:.2f} + stream {:.2f} -> {}%)"
                             .format(t_loop, t_asdf, t_stream, int((t_asdf + t_stream)/t_loop * 100)))
                 t_stream = 0
                 time_stamp_this_loop = now

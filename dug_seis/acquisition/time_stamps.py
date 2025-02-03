@@ -34,8 +34,9 @@ class TimeStamps:
         # samples pre-trigger from start time in seconds
         self._starttime_ns = round(starttime_now, -9) - int((4 * self._delta * 10**9))  # balance 4
 
-        logger.info("new starttime set to: {}".format(UTCDateTime(ns=self._starttime_ns)))
-        logger.info("new starttime, software: {}".format(UTCDateTime(ns=starttime_now)))
+        logger.info("Data starttime set to: {}".format(UTCDateTime(ns=self._starttime_ns)))
+        logger.info("System time: {} sys/data time difference: {}".format(
+            UTCDateTime(ns=starttime_now), UTCDateTime(ns=starttime_now)-UTCDateTime(ns=self._starttime_ns)))
 
     def is_julian_day_still_the_same(self):
         """Check if julian day changed."""
