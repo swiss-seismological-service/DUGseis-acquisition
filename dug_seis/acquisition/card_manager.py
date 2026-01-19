@@ -176,7 +176,9 @@ def run(param):
 
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt detected, exiting...")
-
-    # shutdown
-    for server in servers:
-        server.stop()
+    finally:
+        card1.close()
+        card2.close()
+        star_hub.close()
+        for server in servers:
+            server.stop()
