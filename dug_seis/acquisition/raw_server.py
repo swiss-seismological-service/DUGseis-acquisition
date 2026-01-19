@@ -393,7 +393,7 @@ class Streamer():
         self.server_process = server_process
         self.data_conn = write_conn
         self.server_process.start()
-        self.last_start =  datetime.datetime.now(datetime.UTC)
+        self.last_start =  datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
     def numpy_dtype(self, ch):
         endianness = ">" if ch.endianness == "big" else "<"
@@ -420,7 +420,7 @@ class Streamer():
         except Exception as e:
             logger.error(f"Exception while feeding data: {e}")
             minimum_elapsed_time = datetime.timedelta(seconds=300)
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             if now - self.last_start > minimum_elapsed_time:
                 logger.info("Restarting server...")
                 self.stop()
@@ -482,7 +482,7 @@ if __name__ == "__main__":
     # simulate data
     #
     duration = datetime.timedelta(seconds=300)
-    start_time = datetime.datetime.now(datetime.UTC)
+    start_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     next_samples_time = start_time
 
     logger.info("Starting streaming...")
